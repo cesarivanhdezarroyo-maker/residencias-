@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Trámites y Servicios - ISSSTE C.H. Xalapa') }}
+            {{ __('Cuentas TI - ISSSTE C.H. Xalapa') }}
         </h2>
     </x-slot>
 
@@ -12,7 +12,7 @@
 
                     <div class="mb-6 border-b pb-4">
                         <h3 class="text-2xl font-bold text-[#621132]">
-                            {{ isset($solicitud) ? 'Corregir Solicitud Rechazada' : 'Nueva Solicitud de Servicio TI' }}
+                            {{ isset($solicitud) ? 'Corregir Solicitud Rechazada' : 'Nueva Solicitud de Cuentas TI' }}
                         </h3>
                         <p class="mt-1 text-sm text-gray-600">
                             @if(isset($solicitud))

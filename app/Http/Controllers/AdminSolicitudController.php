@@ -324,4 +324,27 @@ class AdminSolicitudController extends Controller
 
         return back()->with('success', 'Los datos del oficio se actualizaron correctamente.');
     }
+    /**
+     * Pantalla para editar los nombres que aparecen en el Excel oficial:
+     * Director/quien autoriza, Enlace Informático y Jefe de Servicios.
+     */
+    public function configuracionExcelIndex()
+    {
+        $configuracion = \App\Models\ConfiguracionExcel::actual();
+        return view('admin.configuracion_excel', compact('configuracion'));
+    }
+
+    public function configuracionExcelActualizar(Request $request)
+    {
+        $validated = $request->validate([
+            'autoriza_nombre' => ['required', 'string', 'max:255'],
+            'autoriza_cargo' => ['required', 'string', 'max:255'],
+            'enlace_nombre' => ['required', 'string', 'max:255'],
+            'jefe_servicios_nombre' => ['required', 'string', 'max:255'],
+        ]);
+
+        \App\Models\ConfiguracionExcel::actual()->update($validated);
+
+        return back()->with('success', 'Los datos del Excel se actualizaron correctamente.');
+    }
 }

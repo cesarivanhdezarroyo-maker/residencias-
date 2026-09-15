@@ -28,6 +28,9 @@
                         <a href="{{ route('admin.oficio.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('admin.oficio.*') ? 'border-white text-white font-bold' : 'border-transparent text-yellow-400 hover:text-yellow-300 hover:border-yellow-300' }} text-sm leading-5 transition duration-150 ease-in-out">
                             {{ __('Datos del Oficio') }}
                         </a>
+                        <a href="{{ route('admin.configuracion.excel') }}" class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('admin.configuracion.excel*') ? 'border-white text-white font-bold' : 'border-transparent text-yellow-400 hover:text-yellow-300 hover:border-yellow-300' }} text-sm leading-5 transition duration-150 ease-in-out">
+                            {{ __('Datos del Excel') }}
+                        </a>
                     @endif
                 </div>
             </div>

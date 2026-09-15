@@ -180,10 +180,11 @@ class SolicitudController extends Controller
         $sheet->setCellValue('T38', 'JEFE DE SERVICIOS O SUPERIOR');
         $sheet->setCellValue('O14', 'Unidad Medica'); 
         $sheet->setCellValue('H15', 'Subdireccion Medica CH'); 
-        $sheet->setCellValue('K34', 'Dr. Samuel Ferrer Palacios'); 
-        $sheet->setCellValue('K35', 'Director'); 
-        $sheet->setCellValue('K39', 'Hugo Landero López'); 
-        $sheet->setCellValue('T39', 'Dr. Samuel Ferrer Palacios'); 
+        $configExcel = \App\Models\ConfiguracionExcel::actual();
+        $sheet->setCellValue('K34', $configExcel->autoriza_nombre);
+        $sheet->setCellValue('K35', $configExcel->autoriza_cargo);
+        $sheet->setCellValue('K39', $configExcel->enlace_nombre);
+        $sheet->setCellValue('T39', $configExcel->jefe_servicios_nombre); 
 
         $writer = new XlsxWriter($spreadsheet);
         $writer->setPreCalculateFormulas(false);

@@ -54,6 +54,8 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->group(
 
     Route::get('/admin/oficio', [AdminSolicitudController::class, 'configuracionOficioIndex'])->name('admin.oficio.index');
     Route::patch('/admin/oficio', [AdminSolicitudController::class, 'configuracionOficioActualizar'])->name('admin.oficio.actualizar');
+    Route::get('/admin/configuracion-excel', [AdminSolicitudController::class, 'configuracionExcelIndex'])->name('admin.configuracion.excel');
+    Route::patch('/admin/configuracion-excel', [AdminSolicitudController::class, 'configuracionExcelActualizar'])->name('admin.configuracion.excel.actualizar');
 });
 
 require __DIR__.'/auth.php';

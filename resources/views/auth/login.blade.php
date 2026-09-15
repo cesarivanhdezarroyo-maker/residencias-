@@ -2,11 +2,13 @@
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <div class="text-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-800">Portal de Servicios TI</h2>
-        <p class="text-gray-500">ISSSTE - C.H. Xalapa</p>
-        <p class="text-sm text-gray-400 mt-2">Ingresa tus credenciales para continuar</p>
+    <!-- Encabezado guinda del ISSSTE, con el logo dentro -->
+    <div class="-mx-8 -mt-6 mb-6 bg-[#621132] py-8 px-8 flex flex-col items-center rounded-t-lg">
+        <img src="{{ asset('images/logo-issste.png') }}" alt="ISSSTE" class="h-24 mb-3">
+        <h2 class="text-lg font-bold text-white text-center">Cuentas TI - ISSSTE C.H. Xalapa</h2>
     </div>
+
+    <p class="text-sm text-gray-500 text-center mb-4">Ingresa tus credenciales para continuar</p>
 
     <form method="POST" action="{{ route('login') }}">
         @csrf
@@ -40,7 +42,7 @@
             <x-primary-button class="w-full justify-center bg-[#621132] hover:bg-[#4d0d27] py-3">
                 {{ __('INICIAR SESIÓN') }}
             </x-primary-button>
-            
+
             <p class="text-sm text-gray-600">
                 ¿No tienes una cuenta? <a class="underline text-[#621132] hover:text-red-800 font-bold" href="{{ route('register') }}">Regístrate aquí</a>
             </p>
