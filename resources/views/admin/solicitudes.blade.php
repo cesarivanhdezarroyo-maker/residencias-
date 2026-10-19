@@ -56,7 +56,7 @@
                                         <!-- Imagen de Evidencia -->
                                         <td class="py-3 px-4 text-center">
                                             @if($solicitud->imagen_evidencia_path && $solicitud->imagen_evidencia_path !== 'pendiente.jpg')
-                                                <a href="{{ asset('storage/' . $solicitud->imagen_evidencia_path) }}" target="_blank" class="text-blue-500 hover:text-blue-700 underline font-semibold flex items-center justify-center">
+                                                <a href="{{ route('admin.solicitudes.evidencia', $solicitud->id) }}" target="_blank" class="text-blue-500 hover:text-blue-700 underline font-semibold flex items-center justify-center">
                                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                                     Ver Captura
                                                 </a>
@@ -68,7 +68,7 @@
                                         <!-- Descarga Excel -->
                                         <td class="py-3 px-4 text-center">
                                             @if($solicitud->pdf_generado_path)
-                                                <a href="{{ asset('storage/' . $solicitud->pdf_generado_path) }}" class="text-green-600 hover:text-green-800 font-bold underline">
+                                                <a href="{{ route('admin.solicitudes.excel', $solicitud->id) }}" class="text-green-600 hover:text-green-800 font-bold underline">
                                                     Descargar
                                                 </a>
                                             @else

@@ -33,6 +33,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/solicitudes/{id}/oficio', [SolicitudController::class, 'descargarOficio'])->name('solicitudes.oficio');
     Route::get('/solicitudes/{id}/editar', [SolicitudController::class, 'edit'])->name('solicitudes.edit');
     Route::put('/solicitudes/{id}', [SolicitudController::class, 'update'])->name('solicitudes.update');
+
+    Route::get('/avisos', [\App\Http\Controllers\MensajeController::class, 'index'])->name('mensajes.index');
+    Route::post('/avisos', [\App\Http\Controllers\MensajeController::class, 'store'])->name('mensajes.store');
+    Route::patch('/avisos/{id}/confirmar', [\App\Http\Controllers\MensajeController::class, 'confirmar'])->name('mensajes.confirmar');
+
 });
 
 // RUTAS DEL ADMINISTRADOR
@@ -56,6 +61,15 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->group(
     Route::patch('/admin/oficio', [AdminSolicitudController::class, 'configuracionOficioActualizar'])->name('admin.oficio.actualizar');
     Route::get('/admin/configuracion-excel', [AdminSolicitudController::class, 'configuracionExcelIndex'])->name('admin.configuracion.excel');
     Route::patch('/admin/configuracion-excel', [AdminSolicitudController::class, 'configuracionExcelActualizar'])->name('admin.configuracion.excel.actualizar');
+
+    Route::get('/admin/solicitudes/{id}/evidencia', [\App\Http\Controllers\AdminArchivoController::class, 'evidencia'])->name('admin.solicitudes.evidencia');
+    Route::get('/admin/solicitudes/{id}/excel', [\App\Http\Controllers\AdminArchivoController::class, 'excel'])->name('admin.solicitudes.excel');
+
+    Route::get('/admin/mensajes', [\App\Http\Controllers\AdminMensajeController::class, 'index'])->name('admin.mensajes.index');
+    Route::get('/admin/mensajes/nuevo', [\App\Http\Controllers\AdminMensajeController::class, 'create'])->name('admin.mensajes.create');
+    Route::post('/admin/mensajes', [\App\Http\Controllers\AdminMensajeController::class, 'store'])->name('admin.mensajes.store');
+    Route::patch('/admin/mensajes/{id}/leido', [\App\Http\Controllers\AdminMensajeController::class, 'marcarLeido'])->name('admin.mensajes.leido');
+
 });
 
 require __DIR__.'/auth.php';

@@ -111,13 +111,13 @@
                                         <td class="py-3 px-4 text-center">
                                             <div class="flex flex-col gap-1 items-center">
                                                 @if($solicitud->imagen_evidencia_path && $solicitud->imagen_evidencia_path !== 'pendiente.jpg')
-                                                    <a href="{{ asset('storage/' . $solicitud->imagen_evidencia_path) }}" target="_blank" class="text-blue-500 hover:text-blue-700 underline text-xs font-semibold">Ver documento</a>
+                                                    <a href="{{ route('admin.solicitudes.evidencia', $solicitud->id) }}" target="_blank" class="text-blue-500 hover:text-blue-700 underline text-xs font-semibold">Ver documento</a>
                                                 @else
                                                     <span class="text-gray-400 text-xs">Sin imagen</span>
                                                 @endif
 
                                                 @if($solicitud->pdf_generado_path)
-                                                    <a href="{{ asset('storage/' . $solicitud->pdf_generado_path) }}" class="text-green-600 hover:text-green-800 underline text-xs font-semibold">Bajar Excel</a>
+                                                    <a href="{{ route('admin.solicitudes.excel', $solicitud->id) }}" class="text-green-600 hover:text-green-800 underline text-xs font-semibold">Bajar Excel</a>
                                                     <a href="{{ route('admin.solicitudes.pdf', $solicitud->id) }}" class="text-red-600 hover:text-red-800 underline text-xs font-semibold">Generar PDF</a>
                                                 @else
                                                     <span class="text-gray-400 text-xs">Archivo eliminado (limpieza)</span>
@@ -224,13 +224,13 @@
                                         <td class="py-3 px-4 text-center">
                                             <div class="flex flex-col gap-1 items-center">
                                                 @if($solicitud->imagen_evidencia_path && $solicitud->imagen_evidencia_path !== 'pendiente.jpg')
-                                                    <a href="{{ asset('storage/' . $solicitud->imagen_evidencia_path) }}" target="_blank" class="text-blue-500 hover:text-blue-700 underline text-xs font-semibold">Ver documento</a>
+                                                    <a href="{{ route('admin.solicitudes.evidencia', $solicitud->id) }}" target="_blank" class="text-blue-500 hover:text-blue-700 underline text-xs font-semibold">Ver documento</a>
                                                 @else
                                                     <span class="text-gray-400 text-xs">Sin imagen</span>
                                                 @endif
 
                                                 @if($solicitud->pdf_generado_path)
-                                                    <a href="{{ asset('storage/' . $solicitud->pdf_generado_path) }}" class="text-green-600 hover:text-green-800 underline text-xs font-semibold">Bajar Excel</a>
+                                                    <a href="{{ route('admin.solicitudes.excel', $solicitud->id) }}" class="text-green-600 hover:text-green-800 underline text-xs font-semibold">Bajar Excel</a>
                                                     <a href="{{ route('admin.solicitudes.pdf', $solicitud->id) }}" class="text-red-600 hover:text-red-800 underline text-xs font-semibold">Generar PDF</a>
                                                 @else
                                                     <span class="text-gray-400 text-xs">Archivo eliminado (limpieza)</span>

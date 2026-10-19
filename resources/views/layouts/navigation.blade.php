@@ -13,6 +13,18 @@
                         <a href="{{ route('solicitudes.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('solicitudes.index') ? 'border-white text-white font-bold' : 'border-transparent text-gray-300 hover:text-white hover:border-gray-200' }} text-sm leading-5 transition duration-150 ease-in-out">
                             {{ __('Mis Solicitudes') }}
                         </a>
+                        @php
+                            $avisosNuevos = \App\Models\Mensaje::where('usuario_id', Auth::id())
+                                ->where('de_admin', true)
+                                ->whereNull('leido_at')
+                                ->count();
+                        @endphp
+                        <a href="{{ route('mensajes.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('mensajes.*') ? 'border-white text-white font-bold' : 'border-transparent text-gray-300 hover:text-white hover:border-gray-200' }} text-sm leading-5 transition duration-150 ease-in-out">
+                            {{ __('Avisos') }}
+                            @if($avisosNuevos > 0)
+                                <span class="ms-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-[#621132] bg-yellow-300 rounded-full">{{ $avisosNuevos }}</span>
+                            @endif
+                        </a>
                     @endif
 
                     @if(Auth::user()->rol === 'admin')
@@ -31,6 +43,18 @@
                         <a href="{{ route('admin.configuracion.excel') }}" class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('admin.configuracion.excel*') ? 'border-white text-white font-bold' : 'border-transparent text-yellow-400 hover:text-yellow-300 hover:border-yellow-300' }} text-sm leading-5 transition duration-150 ease-in-out">
                             {{ __('Datos del Excel') }}
                         </a>
+                        @php
+                            $mensajesPorLeer = \App\Models\Mensaje::where('de_admin', false)
+                                ->whereNull('leido_at')
+                                ->count();
+                        @endphp
+                        <a href="{{ route('admin.mensajes.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('admin.mensajes.*') ? 'border-white text-white font-bold' : 'border-transparent text-yellow-400 hover:text-yellow-300 hover:border-yellow-300' }} text-sm leading-5 transition duration-150 ease-in-out">
+                            {{ __('Mensajes') }}
+                            @if($mensajesPorLeer > 0)
+                                <span class="ms-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-[#621132] bg-yellow-300 rounded-full">{{ $mensajesPorLeer }}</span>
+                            @endif
+                        </a>
+
                     @endif
                 </div>
             </div>
