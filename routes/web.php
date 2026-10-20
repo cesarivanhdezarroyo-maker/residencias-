@@ -20,9 +20,9 @@ Route::get('/dashboard', function () {
 
 // RUTAS DE USUARIO NORMAL
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    // Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    // Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    // Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/mis-solicitudes', [SolicitudController::class, 'index'])->name('solicitudes.index');
     Route::get('/solicitudes/nueva', [SolicitudController::class, 'create'])->name('solicitudes.create');
