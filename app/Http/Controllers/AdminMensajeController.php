@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\MensajeNuevo;
 use App\Models\Mensaje;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
 
 class AdminMensajeController extends Controller
 {
@@ -55,7 +53,7 @@ class AdminMensajeController extends Controller
     }
 
     /**
-     * Guarda el aviso (cuerpo cifrado) y, si se pidió, manda también una copia por correo.
+     * Guarda el aviso (el cuerpo se almacena cifrado). Solo se entrega dentro del sistema.
      */
     public function store(Request $request)
     {
@@ -66,7 +64,7 @@ class AdminMensajeController extends Controller
             'cuerpo' => ['required', 'string', 'max:2000'],
         ]);
 
-        $mensaje = Mensaje::create([
+        Mensaje::create([
             'usuario_id' => $validated['usuario_id'],
             'solicitud_id' => $validated['solicitud_id'] ?? null,
             'de_admin' => true,
@@ -75,31 +73,8 @@ class AdminMensajeController extends Controller
             'requiere_confirmacion' => $request->boolean('requiere_confirmacion'),
         ]);
 
-        $nota = '';
-
-        if ($request->boolean('enviar_correo')) {
-            $usuario = Usuario::find($validated['usuario_id']);
-
-            $destinos = collect([$usuario->correo_personal, $usuario->correo_institucional])
-                ->filter(fn ($correo) => filter_var($correo, FILTER_VALIDATE_EMAIL))
-                ->unique()
-                ->values()
-                ->all();
-
-            if (empty($destinos)) {
-                $nota = ' No se envió correo porque la persona no tiene un correo válido registrado.';
-            } else {
-                try {
-                    Mail::to($destinos)->send(new MensajeNuevo($mensaje));
-                    $mensaje->update(['correo_enviado' => true]);
-                } catch (\Throwable $e) {
-                    report($e);
-                    $nota = ' El correo no pudo enviarse, pero el aviso quedó disponible dentro del sistema.';
-                }
-            }
-        }
-
-        return redirect()->route('admin.mensajes.index')->with('success', 'Aviso enviado.' . $nota);
+        return redirect()->route('admin.mensajes.index')
+            ->with('success', 'Aviso enviado. La persona lo verá en su apartado "Avisos".');
     }
 
     /**

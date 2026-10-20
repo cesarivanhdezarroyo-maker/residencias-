@@ -49,11 +49,11 @@
                         <textarea name="cuerpo" rows="6" maxlength="2000" required
                                   class="w-full rounded border-gray-300 shadow-sm focus:border-[#621132] focus:ring-[#621132] text-sm">{{ old('cuerpo') }}</textarea>
                         <p class="text-xs text-gray-500 mt-1">
-                            El texto se guarda cifrado en la base de datos. La copia por correo lleva el mismo texto.
+                            El texto se guarda cifrado en la base de datos y solo lo ve la persona destinataria.
                         </p>
                     </div>
 
-                    <div class="space-y-2">
+                    <div>
                         <label class="flex items-start gap-2 text-sm text-gray-700">
                             <input type="checkbox" name="requiere_confirmacion" value="1"
                                    {{ old('requiere_confirmacion') ? 'checked' : '' }}
@@ -62,16 +62,6 @@
                                 <strong>Requiere confirmación.</strong>
                                 La persona verá el botón "Estoy enterado" y quedará registrado cuándo lo presionó.
                                 Úsalo, por ejemplo, antes de cambiar una contraseña.
-                            </span>
-                        </label>
-
-                        <label class="flex items-start gap-2 text-sm text-gray-700">
-                            <input type="checkbox" name="enviar_correo" value="1"
-                                   {{ old('enviar_correo', false) ? 'checked' : '' }}
-                                   class="mt-1 rounded border-gray-300 text-[#621132] focus:ring-[#621132]">
-                            <span>
-                                <strong>Enviar también una copia por correo.</strong>
-                                Si el correo falla, el aviso se conserva dentro del sistema.
                             </span>
                         </label>
                     </div>

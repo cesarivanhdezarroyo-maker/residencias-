@@ -111,7 +111,6 @@
                                 <th>Asunto</th>
                                 <th>Enviado</th>
                                 <th>Estado</th>
-                                <th>Correo</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -130,7 +129,6 @@
                                     <td>{{ $m->asunto }}</td>
                                     <td>{{ $m->created_at->format('d/m/Y H:i') }}</td>
                                     <td>{{ $estado }}</td>
-                                    <td>{{ $m->correo_enviado ? 'Enviado' : 'No enviado' }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
