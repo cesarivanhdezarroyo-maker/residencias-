@@ -67,7 +67,7 @@
 
                         <label class="flex items-start gap-2 text-sm text-gray-700">
                             <input type="checkbox" name="enviar_correo" value="1"
-                                   {{ old('enviar_correo', true) ? 'checked' : '' }}
+                                   {{ old('enviar_correo', false) ? 'checked' : '' }}
                                    class="mt-1 rounded border-gray-300 text-[#621132] focus:ring-[#621132]">
                             <span>
                                 <strong>Enviar también una copia por correo.</strong>
