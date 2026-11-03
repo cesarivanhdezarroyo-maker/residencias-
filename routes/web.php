@@ -69,6 +69,7 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->group(
     Route::get('/admin/mensajes/nuevo', [\App\Http\Controllers\AdminMensajeController::class, 'create'])->name('admin.mensajes.create');
     Route::post('/admin/mensajes', [\App\Http\Controllers\AdminMensajeController::class, 'store'])->name('admin.mensajes.store');
     Route::patch('/admin/mensajes/{id}/leido', [\App\Http\Controllers\AdminMensajeController::class, 'marcarLeido'])->name('admin.mensajes.leido');
+    Route::get('/admin/mensajes/usuario/{id}', [\App\Http\Controllers\AdminMensajeController::class, 'show'])->name('admin.mensajes.show');
 
 });
 

@@ -12,7 +12,7 @@
     </x-slot>
 
     <div class="py-8">
-        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-8">
+        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-4">
 
             @if(session('success'))
                 <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4">
@@ -20,121 +20,89 @@
                 </div>
             @endif
 
-            {{-- Pendientes de confirmación --}}
-            <div class="bg-white shadow rounded-lg p-6 border-t-4 border-red-600">
-                <h3 class="text-lg font-bold text-red-700 mb-1">Pendientes de confirmación</h3>
-                <p class="text-xs text-gray-500 mb-4">
-                    Avisos que requieren que la persona presione "Estoy enterado". Revisa esta lista antes de hacer un cambio
-                    (por ejemplo, de contraseña).
-                </p>
+            {{-- Filtros y búsqueda --}}
+            <div class="bg-white shadow rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div class="flex flex-wrap gap-2 text-sm">
+                    <a href="{{ route('admin.mensajes.index') }}"
+                       class="px-3 py-1 rounded-full border {{ !$filtro ? 'bg-[#621132] text-white border-[#621132]' : 'text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+                        Todas
+                    </a>
+                    <a href="{{ route('admin.mensajes.index', ['filtro' => 'sin_leer']) }}"
+                       class="px-3 py-1 rounded-full border {{ $filtro === 'sin_leer' ? 'bg-[#621132] text-white border-[#621132]' : 'text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+                        Con mensajes sin leer ({{ $totalSinLeer }})
+                    </a>
+                    <a href="{{ route('admin.mensajes.index', ['filtro' => 'pendientes']) }}"
+                       class="px-3 py-1 rounded-full border {{ $filtro === 'pendientes' ? 'bg-[#621132] text-white border-[#621132]' : 'text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+                        Con confirmaciones pendientes ({{ $totalPorConfirmar }})
+                    </a>
+                </div>
 
-                @if($pendientes->isEmpty())
-                    <p class="text-sm text-gray-500">No hay avisos pendientes de confirmar.</p>
-                @else
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="text-left text-xs text-gray-500 border-b">
-                                <th class="py-2">Empleado</th>
-                                <th>Asunto</th>
-                                <th>Enviado</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($pendientes as $p)
-                                <tr class="border-b">
-                                    <td class="py-2">{{ $p->usuario->name ?? 'Usuario eliminado' }}</td>
-                                    <td>{{ $p->asunto }}</td>
-                                    <td>{{ $p->created_at->format('d/m/Y H:i') }}</td>
-                                    <td>{{ $p->leido_at ? 'Leído, falta confirmar' : 'Sin leer' }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                @endif
+                <form method="GET" action="{{ route('admin.mensajes.index') }}" class="flex gap-2">
+                    @if($filtro)
+                        <input type="hidden" name="filtro" value="{{ $filtro }}">
+                    @endif
+                    <input type="text" name="q" value="{{ $busqueda }}" placeholder="Buscar por nombre o matrícula"
+                           class="rounded border-gray-300 shadow-sm focus:border-[#621132] focus:ring-[#621132] text-sm w-56">
+                    <button type="submit" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold px-3 rounded">Buscar</button>
+                </form>
             </div>
 
-            {{-- Mensajes de empleados --}}
-            <div class="bg-white shadow rounded-lg p-6 border-t-4 border-[#621132]">
-                <h3 class="text-lg font-bold text-[#621132] mb-4">Mensajes de empleados</h3>
+            {{-- Conversaciones --}}
+            <div class="bg-white shadow rounded-lg divide-y border-t-4 border-[#621132]">
+                @forelse($conversaciones as $c)
+                    @php
+                        $nombre = $c->usuario->name ?? 'Usuario eliminado';
+                        $inicial = mb_strtoupper(mb_substr($nombre, 0, 1));
+                        $fecha = \Carbon\Carbon::parse($c->ultimo)->format('d/m/Y H:i');
+                        $ultimo = $c->ultimo_mensaje;
+                    @endphp
+                    <a href="{{ route('admin.mensajes.show', $c->usuario_id) }}"
+                       class="flex items-center gap-4 p-4 hover:bg-[#fdf2f6] {{ $c->sin_leer > 0 ? 'bg-[#fdf2f6]' : '' }}">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-[#621132] text-white flex items-center justify-center font-bold">
+                            {{ $inicial }}
+                        </div>
 
-                @forelse($recibidos as $m)
-                    <div class="border rounded p-4 mb-3 {{ $m->leido_at ? 'bg-white' : 'bg-[#fdf2f6]' }}">
-                        <div class="flex justify-between items-start gap-3">
-                            <div>
-                                <p class="text-xs text-gray-500">
-                                    {{ $m->usuario->name ?? 'Usuario eliminado' }}
-                                    @if($m->usuario) &middot; Matrícula {{ $m->usuario->numero_empleado }} @endif
-                                    &middot; {{ $m->created_at->format('d/m/Y H:i') }}
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-start gap-3">
+                                <p class="font-bold text-gray-800 truncate">
+                                    {{ $nombre }}
+                                    @if($c->usuario)
+                                        <span class="text-xs font-normal text-gray-500">Matrícula {{ $c->usuario->numero_empleado }}</span>
+                                    @endif
                                 </p>
-                                <p class="font-bold text-gray-800 mt-1">{{ $m->asunto }}</p>
+                                <span class="text-xs text-gray-500 whitespace-nowrap">{{ $fecha }}</span>
                             </div>
-                            @unless($m->leido_at)
-                                <span class="text-xs font-bold text-white bg-[#621132] rounded-full px-2 py-0.5">Sin leer</span>
-                            @endunless
-                        </div>
 
-                        <p class="text-sm text-gray-700 mt-2">{!! nl2br(e($m->cuerpo)) !!}</p>
+                            <p class="text-sm text-gray-600 truncate">
+                                @if($ultimo)
+                                    {{ $ultimo->de_admin ? 'Sistemas: ' : '' }}{{ $ultimo->asunto }}
+                                @endif
+                            </p>
 
-                        <div class="mt-3 flex gap-3">
-                            @if($m->usuario)
-                                <a href="{{ route('admin.mensajes.create', ['usuario_id' => $m->usuario_id, 'asunto' => 'Re: ' . $m->asunto]) }}"
-                                   class="text-sm font-bold text-[#621132] underline">Responder</a>
-                            @endif
-                            @unless($m->leido_at)
-                                <form action="{{ route('admin.mensajes.leido', $m->id) }}" method="POST">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="text-sm text-gray-600 underline">Marcar como leído</button>
-                                </form>
-                            @endunless
+                            <div class="mt-1 flex flex-wrap gap-2">
+                                @if($c->sin_leer > 0)
+                                    <span class="text-xs font-bold text-white bg-[#621132] rounded-full px-2 py-0.5">
+                                        {{ $c->sin_leer }} sin leer
+                                    </span>
+                                @endif
+                                @if($c->por_confirmar > 0)
+                                    <span class="text-xs font-bold text-amber-800 bg-amber-100 rounded-full px-2 py-0.5">
+                                        {{ $c->por_confirmar }} por confirmar
+                                    </span>
+                                @endif
+                                <span class="text-xs text-gray-400">{{ $c->total }} mensaje(s)</span>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 @empty
-                    <p class="text-sm text-gray-500">Todavía no hay mensajes de empleados.</p>
+                    <p class="p-6 text-sm text-gray-500">
+                        @if($filtro || $busqueda)
+                            No hay conversaciones que coincidan con el filtro.
+                        @else
+                            Todavía no hay conversaciones. Usa "Nuevo aviso" para escribirle a un empleado.
+                        @endif
+                    </p>
                 @endforelse
-
-                <div>{{ $recibidos->links() }}</div>
-            </div>
-
-            {{-- Avisos enviados --}}
-            <div class="bg-white shadow rounded-lg p-6 border-t-4 border-gray-400">
-                <h3 class="text-lg font-bold text-gray-800 mb-4">Avisos enviados</h3>
-
-                @if($enviados->isEmpty())
-                    <p class="text-sm text-gray-500">Todavía no has enviado avisos.</p>
-                @else
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="text-left text-xs text-gray-500 border-b">
-                                <th class="py-2">Empleado</th>
-                                <th>Asunto</th>
-                                <th>Enviado</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($enviados as $m)
-                                @php
-                                    if ($m->requiere_confirmacion) {
-                                        $estado = $m->confirmado_at
-                                            ? 'Confirmado'
-                                            : ($m->leido_at ? 'Leído, falta confirmar' : 'Sin leer');
-                                    } else {
-                                        $estado = $m->leido_at ? 'Leído' : 'Sin leer';
-                                    }
-                                @endphp
-                                <tr class="border-b">
-                                    <td class="py-2">{{ $m->usuario->name ?? 'Usuario eliminado' }}</td>
-                                    <td>{{ $m->asunto }}</td>
-                                    <td>{{ $m->created_at->format('d/m/Y H:i') }}</td>
-                                    <td>{{ $estado }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    <div class="mt-3">{{ $enviados->links() }}</div>
-                @endif
             </div>
         </div>
     </div>
