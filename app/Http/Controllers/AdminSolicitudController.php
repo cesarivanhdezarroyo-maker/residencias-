@@ -70,6 +70,7 @@ class AdminSolicitudController extends Controller
         }
 
         $solicitud->update($validated);
+        $avisoServicios = \App\Models\ServicioRegistrado::sincronizarDesdeSolicitud($solicitud);
 
 
         // Si es el servicio de Correo Institucional y ya se capturó un correo

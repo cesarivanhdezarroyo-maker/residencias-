@@ -20,9 +20,9 @@ Route::get('/dashboard', function () {
 
 // RUTAS DE USUARIO NORMAL
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    // Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    // Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    // Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/mis-solicitudes', [SolicitudController::class, 'index'])->name('solicitudes.index');
     Route::get('/solicitudes/nueva', [SolicitudController::class, 'create'])->name('solicitudes.create');
@@ -34,9 +34,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/solicitudes/{id}/editar', [SolicitudController::class, 'edit'])->name('solicitudes.edit');
     Route::put('/solicitudes/{id}', [SolicitudController::class, 'update'])->name('solicitudes.update');
 
-    Route::get('/mis-servicios', [\App\Http\Controllers\ServicioRegistradoController::class, 'index'])->name('servicios.index');
-    Route::post('/mis-servicios', [\App\Http\Controllers\ServicioRegistradoController::class, 'store'])->middleware('throttle:20,1')->name('servicios.store');
-    Route::delete('/mis-servicios/{id}', [\App\Http\Controllers\ServicioRegistradoController::class, 'destroy'])->name('servicios.destroy');
+    Route::get('/mis-servicios', [\App\Http\Controllers\ServicioRegistradoController::class, 'index'])
+    ->middleware(\App\Http\Middleware\TrabajadorMiddleware::class)
+    ->name('servicios.index');
+Route::post('/mis-servicios', [\App\Http\Controllers\ServicioRegistradoController::class, 'store'])
+    ->middleware([\App\Http\Middleware\TrabajadorMiddleware::class, 'throttle:20,1'])
+    ->name('servicios.store');
+Route::delete('/mis-servicios/{id}', [\App\Http\Controllers\ServicioRegistradoController::class, 'destroy'])
+    ->middleware(\App\Http\Middleware\TrabajadorMiddleware::class)
+    ->name('servicios.destroy');
 
 
     Route::get('/avisos', [\App\Http\Controllers\MensajeController::class, 'index'])->name('mensajes.index');
