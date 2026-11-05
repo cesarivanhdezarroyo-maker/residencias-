@@ -13,6 +13,10 @@
                         <a href="{{ route('solicitudes.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('solicitudes.index') ? 'border-white text-white font-bold' : 'border-transparent text-gray-300 hover:text-white hover:border-gray-200' }} text-sm leading-5 transition duration-150 ease-in-out">
                             {{ __('Mis Solicitudes') }}
                         </a>
+                        <a href="{{ route('servicios.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('servicios.*') ? 'border-white text-white font-bold' : 'border-transparent text-gray-300 hover:text-white hover:border-gray-200' }} text-sm leading-5 transition duration-150 ease-in-out">
+                            {{ __('Mis Servicios') }}
+                        </a>
+
                         @php
                             $avisosNuevos = \App\Models\Mensaje::where('usuario_id', Auth::id())
                                 ->where('de_admin', true)

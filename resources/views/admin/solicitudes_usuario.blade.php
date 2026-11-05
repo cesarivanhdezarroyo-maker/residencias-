@@ -32,6 +32,13 @@
             </div>
 
             <!-- ===================== CREDENCIALES DE LA PLATAFORMA (independiente de las solicitudes) ===================== -->
+             <div class="mb-4">
+                <a href="{{ route('admin.usuarios.servicios', $usuario->id) }}"
+                   class="inline-block bg-white border border-[#621132] text-[#621132] hover:bg-[#fdf2f6] font-bold text-sm px-4 py-2 rounded shadow-sm">
+                    Ver servicios registrados de esta persona
+                </a>
+            </div>
+
             <div x-data="{ open: false }" class="mb-8">
                 <button @click="open = !open" type="button"
                         class="bg-[#621132] hover:bg-[#4d0d27] text-white font-bold py-2 px-4 rounded shadow text-sm">
@@ -253,7 +260,7 @@
                                                 <!-- Al aprobar la baja, aquí se anota cómo quedó invalidado el acceso -->
                                                 <div class="w-full text-left space-y-1 border-t pt-2 mt-1">
                                                     <input type="text" name="credencial_usuario" value="{{ old('credencial_usuario', $solicitud->credencial_usuario) }}"
-                                                           placeholder="Usuario dado de baja"
+                                                            placeholder="Usuario o equipo dado de baja"
                                                            class="text-xs rounded border-gray-300 shadow-sm focus:border-[#621132] w-full">
                                                     <input type="text" name="credencial_password" value="{{ old('credencial_password', $solicitud->credencial_password) }}"
                                                            placeholder="Nueva contraseña (bloquea acceso)"
@@ -303,4 +310,34 @@
 
         </div>
     </div>
+    <script>
+        document.querySelectorAll('select[name="estado_solicitud"]').forEach(function (sel) {
+            var form = sel.closest('form');
+            if (!form) { return; }
+
+            var usuario = form.querySelector('[name="credencial_usuario"]');
+            var clave = form.querySelector('[name="credencial_password"]');
+            var notas = form.querySelector('[name="credencial_notas"]');
+            var placeholderOriginal = notas ? notas.getAttribute('placeholder') : '';
+
+            function aplicar() {
+                var rechazado = sel.value === 'Rechazado';
+
+                [usuario, clave].forEach(function (campo) {
+                    if (!campo) { return; }
+                    campo.style.display = rechazado ? 'none' : '';
+                    campo.disabled = rechazado; // un campo deshabilitado no se envia
+                });
+
+                if (notas) {
+                    notas.setAttribute('placeholder', rechazado ? 'Motivo del rechazo (obligatorio)' : placeholderOriginal);
+                    notas.required = rechazado;
+                }
+            }
+
+            sel.addEventListener('change', aplicar);
+            aplicar();
+        });
+    </script>
+
 </x-app-layout>

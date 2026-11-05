@@ -57,12 +57,20 @@ class AdminSolicitudController extends Controller
                 ? 'nullable|email:rfc|max:255'
                 : 'nullable|string|max:255',
             'credencial_password' => 'nullable|string|max:255',
-            'credencial_notas' => 'nullable|string|max:2000',
+            'credencial_notas' => 'nullable|string|max:2000|required_if:estado_solicitud,Rechazado',
         ], [
             'credencial_usuario.email' => 'Para este servicio, el campo debe ser un correo institucional válido (ej. nombre@issste.gob.mx).',
+            'credencial_notas.required_if' => 'Escribe el motivo del rechazo.',
         ]);
 
+        // Al rechazar solo se conserva el motivo: no se guardan credenciales.
+        if ($validated['estado_solicitud'] === 'Rechazado') {
+            $validated['credencial_usuario'] = null;
+            $validated['credencial_password'] = null;
+        }
+
         $solicitud->update($validated);
+
 
         // Si es el servicio de Correo Institucional y ya se capturó un correo
         // válido (ya lo garantiza la validación de arriba), ese dato se
@@ -94,16 +102,28 @@ class AdminSolicitudController extends Controller
             }
         }
 
-        return back()->with('success', 'La solicitud se actualizó correctamente.');
+        return back()->with(
+            'success',
+            'La solicitud se actualizó correctamente.' . ($avisoServicios ? ' Aviso: ' . $avisoServicios : '')
+        );
+
     }
 
     public function eliminarSolicitud($id)
     {
         $solicitud = Solicitud::findOrFail($id);
-        $solicitud->delete();
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($solicitud) {
+            if ($solicitud->tipo_solicitud === 'BAJA') {
+                \App\Models\ServicioRegistrado::where('baja_solicitud_id', $solicitud->id)
+                    ->update(['estado' => 'Activo', 'baja_solicitud_id' => null]);
+            }
+            $solicitud->delete();
+        });
 
         return back()->with('success', 'La solicitud fue eliminada definitivamente.');
     }
+
 
     public function eliminarUsuario($id)
     {
