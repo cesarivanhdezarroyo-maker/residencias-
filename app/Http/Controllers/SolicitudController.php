@@ -164,8 +164,9 @@ class SolicitudController extends Controller
         $sheet->setCellValue('H11', $usuario->numero_empleado);
         $sheet->setCellValue('N11', $usuario->puesto->nombre_puesto ?? 'Personal');
         $sheet->setCellValue('AB11', 'Por TI'); 
-        $sheet->setCellValue('Y16', 'Por asignar por TI');  
-        $sheet->setCellValue('Y17', 'Por asignar por TI');  
+        $equipo = app(\App\Services\EquipoLookupService::class)->buscar($usuario->numero_empleado);
+        $sheet->setCellValue('Y16', $equipo['ip'] ?? 'Por asignar por TI');
+        $sheet->setCellValue('Y17', $equipo['hostname'] ?? 'Por asignar por TI');
         $sheet->setCellValue('H19', $solicitud->tipo_solicitud);
         $sheet->setCellValue('X19', $usuario->tipo_contratacion ?? 'N/A');
         $sheet->setCellValue('H20', $servicioNombre);

@@ -64,6 +64,23 @@ return [
             ]) : [],
         ],
 
+        'equipos' => [
+            'driver' => 'mysql',
+            'host' => env('EQUIPOS_DB_HOST', '127.0.0.1'),
+            'port' => env('EQUIPOS_DB_PORT', '3306'),
+            'database' => env('EQUIPOS_DB_DATABASE'),
+            'username' => env('EQUIPOS_DB_USERNAME'),
+            'password' => env('EQUIPOS_DB_PASSWORD'),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+            'options' => [
+                PDO::ATTR_TIMEOUT => 3,
+            ],
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),
