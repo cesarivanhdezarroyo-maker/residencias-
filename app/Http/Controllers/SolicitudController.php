@@ -17,29 +17,8 @@ class SolicitudController extends Controller
 {
     private function getCatalogo()
     {
-        return [
-            'ABC' => [
-                'nombre' => 'Cuentas de Red y Correo Institucional (ABC)',
-                'categorias' => [
-                    'AD USUARIO' => 'AD USUARIO (Cuenta de Red)',
-                    'AD-EX USUARIO Y CUENTA DE CORREO' => 'AD-EX USUARIO Y CUENTA DE CORREO (Red y Correo)',
-                    'EX CUENTA DE CORREO' => 'EX CUENTA DE CORREO (Solo Correo Institucional)',
-                ]
-            ],
-            'LICENCIA' => [
-                'nombre' => 'Licencias de Software Institucional',
-                'categorias' => [
-                    'Licencia Office 365' => 'Licencia Office 365 (Paquetería Office)',
-                ]
-            ],
-            'HARDWARE' => [
-                'nombre' => 'Hardware / Equipo de Cómputo',
-                'categorias' => [
-                    'Computadora / Laptop' => 'Asignación de Computadora / Laptop',
-                    'Impresora / Escaner' => 'Asignación de Impresora / Escáner',
-                ]
-            ],
-        ];
+        // Servicios y categorias EXACTAMENTE como estan en el formato de Excel (hoja "Catalogo")
+        return \App\Support\ListasFormato::catalogo();
     }
 
     public function index()
@@ -63,6 +42,8 @@ class SolicitudController extends Controller
             'categoria' => 'required|string',
             'justificacion' => 'required|string',
             'puesto_id' => 'required|exists:puestos,id',
+            'oficina' => ['required', \Illuminate\Validation\Rule::in(\App\Support\ListasFormato::oficinas())],
+            'tipo_contratacion' => ['required', \Illuminate\Validation\Rule::in(\App\Support\ListasFormato::tiposContratacion())],
             'imagen_evidencia' => [
                 'required',
                 'file',
@@ -112,20 +93,17 @@ class SolicitudController extends Controller
         }
 
         if ($request->categoria === 'Licencia Office 365' && $request->tipo_solicitud === 'ALTA') {
-            $nombreCategoriaEquipo = $catalogo['HARDWARE']['categorias']['Computadora / Laptop'];
-            $catEquipoDb = CategoriaServicio::where('nombre_categoria', $nombreCategoriaEquipo)->first();
+            // Office 365 se asocia a una cuenta de correo: requiere una ALTA previa de ABC con correo (AD-EX o EX)
+            $categoriasCorreo = CategoriaServicio::whereIn('nombre_categoria', \App\Support\ListasFormato::categoriasConCorreo())->pluck('id');
 
-            $tieneEquipo = false;
-            if ($catEquipoDb) {
-                $tieneEquipo = Solicitud::where('usuario_id', $usuario->id)
-                    ->where('tipo_solicitud', 'ALTA')
-                    ->where('categoria_id', $catEquipoDb->id)
-                    ->exists();
-            }
+            $tieneCorreo = Solicitud::where('usuario_id', $usuario->id)
+                ->where('tipo_solicitud', 'ALTA')
+                ->whereIn('categoria_id', $categoriasCorreo)
+                ->exists();
 
-            if (!$tieneEquipo) {
+            if (!$tieneCorreo) {
                 return back()->withErrors([
-                    'categoria' => 'No puedes solicitar la Paquetería Office 365 si no cuentas previamente con una solicitud aprobada de Equipo de Cómputo.'
+                    'categoria' => 'Para solicitar la licencia de Office 365 necesitas tener una solicitud previa de ALTA con cuenta de correo (AD-EX USUARIO Y CUENTA DE CORREO o EX CUENTA DE CORREO).'
                 ])->withInput();
             }
         }
@@ -137,7 +115,11 @@ class SolicitudController extends Controller
             $rutaImagen = $file->storeAs('evidencias', $nombreArchivo, 'public');
         }
 
-        $usuario->update(['puesto_id' => $request->puesto_id]);
+        $usuario->update([
+            'puesto_id' => $request->puesto_id,
+            'oficina' => $request->oficina,
+            'tipo_contratacion' => $request->tipo_contratacion,
+        ]);
 
         $solicitud = new Solicitud();
         $solicitud->usuario_id = $usuario->id;
@@ -180,7 +162,7 @@ class SolicitudController extends Controller
         $sheet->setCellValue('K38', 'ENLACE INFORMATICO');
         $sheet->setCellValue('T38', 'JEFE DE SERVICIOS O SUPERIOR');
         $sheet->setCellValue('O14', 'Unidad Medica'); 
-        $sheet->setCellValue('H15', 'Subdireccion Medica CH'); 
+        $sheet->setCellValue('H15', $usuario->oficina ?: 'Subdireccion Medica CH'); 
         $configExcel = \App\Models\ConfiguracionExcel::actual();
         $sheet->setCellValue('K34', $configExcel->autoriza_nombre);
         $sheet->setCellValue('K35', $configExcel->autoriza_cargo);
@@ -188,7 +170,7 @@ class SolicitudController extends Controller
         $sheet->setCellValue('T39', $configExcel->jefe_servicios_nombre); 
 
         $writer = new XlsxWriter($spreadsheet);
-        $writer->setPreCalculateFormulas(false);
+        $writer->setPreCalculateFormulas(true);
         
         $fileName = 'Solicitud_' . $solicitud->tipo_solicitud . '_' . $usuario->numero_empleado . '_' . time() . '.xlsx';
         $filePath = storage_path('app/public/' . $fileName);

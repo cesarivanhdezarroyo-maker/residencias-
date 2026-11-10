@@ -49,7 +49,7 @@ class AdminSolicitudController extends Controller
 
         $esCorreoInstitucional = $solicitud->tipo_solicitud === 'ALTA'
             && $solicitud->servicio
-            && $solicitud->servicio->nombre_servicio === 'Cuentas de Red y Correo Institucional (ABC)';
+            && $solicitud->servicio->nombre_servicio === 'ABC';
 
         $validated = $request->validate([
             'estado_solicitud' => 'required|in:Pendiente,Aprobado,Rechazado',

@@ -148,9 +148,9 @@
 
                                                 <!-- Credenciales: solo aplica a Altas -->
                                                 <div class="w-full text-left space-y-1 border-t pt-2 mt-1">
-                                                    <input type="{{ $solicitud->servicio && $solicitud->servicio->nombre_servicio === 'Cuentas de Red y Correo Institucional (ABC)' ? 'email' : 'text' }}"
+                                                    <input type="{{ $solicitud->servicio && $solicitud->servicio->nombre_servicio === 'ABC' ? 'email' : 'text' }}"
                                                            name="credencial_usuario" value="{{ old('credencial_usuario', $solicitud->credencial_usuario) }}"
-                                                           placeholder="{{ $solicitud->servicio && $solicitud->servicio->nombre_servicio === 'Cuentas de Red y Correo Institucional (ABC)' ? 'Correo institucional (nombre@issste.gob.mx)' : 'Usuario asignado' }}"
+                                                           placeholder="{{ $solicitud->servicio && $solicitud->servicio->nombre_servicio === 'ABC' ? 'Correo institucional (nombre@issste.gob.mx)' : 'Usuario asignado' }}"
                                                            class="text-xs rounded border-gray-300 shadow-sm focus:border-[#621132] w-full">
                                                     <input type="text" name="credencial_password" value="{{ old('credencial_password', $solicitud->credencial_password) }}"
                                                            placeholder="Contraseña asignada"

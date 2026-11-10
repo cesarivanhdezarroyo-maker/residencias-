@@ -19,6 +19,7 @@ class Usuario extends Authenticatable
         'numero_empleado',
         'correo_personal',
         'puesto_id',
+        'oficina',
         'tipo_contratacion',
         'usuario_sistema',
         'correo_institucional',

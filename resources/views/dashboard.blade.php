@@ -82,11 +82,21 @@
                                 </div>
 
                                 <div>
-                                    <x-input-label for="puesto_id" :value="__('Puesto Oficial Actual')" class="font-bold text-gray-700" />
-                                    <select id="puesto_id" name="puesto_id" class="mt-1 block w-full border-gray-300 focus:border-[#621132] focus:ring-[#621132] rounded-md shadow-sm" required>
-                                        <option value="" disabled {{ old('puesto_id') ? '' : 'selected' }}>Seleccione su puesto oficial del catálogo...</option>
-                                        @foreach($puestos as $puesto)
-                                            <option value="{{ $puesto->id }}" {{ old('puesto_id') == $puesto->id ? 'selected' : '' }}>{{ $puesto->nombre_puesto }}</option>
+                                    <x-input-label for="buscador_puesto_id_texto" :value="__('Puesto Oficial Actual')" class="font-bold text-gray-700" />
+                                    <x-buscador-lista name="puesto_id" :options="$puestos->pluck('nombre_puesto', 'id')->all()" :selected="old('puesto_id', auth()->user()->puesto_id)" placeholder="Escribe para buscar tu puesto..." :required="true" />
+                                </div>
+
+                                <div>
+                                    <x-input-label for="buscador_oficina_texto" :value="__('Oficina')" class="font-bold text-gray-700" />
+                                    <x-buscador-lista name="oficina" :options="array_combine(\App\Support\ListasFormato::oficinas(), \App\Support\ListasFormato::oficinas())" :selected="old('oficina', auth()->user()->oficina)" placeholder="Escribe para buscar tu oficina..." :required="true" />
+                                </div>
+
+                                <div>
+                                    <x-input-label for="tipo_contratacion" :value="__('Tipo de Contratación')" class="font-bold text-gray-700" />
+                                    <select id="tipo_contratacion" name="tipo_contratacion" class="mt-1 block w-full border-gray-300 focus:border-[#621132] focus:ring-[#621132] rounded-md shadow-sm" required>
+                                        <option value="" disabled {{ old('tipo_contratacion', auth()->user()->tipo_contratacion) ? '' : 'selected' }}>Seleccione una opción...</option>
+                                        @foreach(\App\Support\ListasFormato::tiposContratacion() as $tipo)
+                                            <option value="{{ $tipo }}" {{ old('tipo_contratacion', auth()->user()->tipo_contratacion) == $tipo ? 'selected' : '' }}>{{ $tipo }}</option>
                                         @endforeach
                                     </select>
                                 </div>
