@@ -81,32 +81,43 @@ class SolicitudController extends Controller
         // BLOQUEO ESTRICTO: Solo permite 1 trámite por servicio, sin importar
         // el estado. Si está Rechazada, se corrige por "Corregir y reenviar"
         // (edita la misma solicitud), no creando una nueva desde cero.
-        $existeSolicitud = Solicitud::where('usuario_id', $usuario->id)
+        $consultaDuplicado = Solicitud::where('usuario_id', $usuario->id)
             ->where('tipo_solicitud', $request->tipo_solicitud)
-            ->where('servicio_id', $servicioDb->id)
-            ->exists();
+            ->where('servicio_id', $servicioDb->id);
 
-        if ($existeSolicitud) {
+        // En la mayoria de los servicios se pueden pedir varias categorias; solo se bloquea repetir la misma.
+        // En los servicios de "una sola solicitud" (por ejemplo, el perfil de internet) se bloquea cualquier repeticion.
+        if (!in_array($request->servicio, \App\Support\ListasFormato::serviciosUnaSolicitud(), true)) {
+            $consultaDuplicado->where('categoria_id', $categoriaDb->id);
+        }
+
+        if ($consultaDuplicado->exists()) {
             return back()->withErrors([
-                'categoria' => "Ya cuentas con una solicitud de {$request->tipo_solicitud} para '{$servicioNombre}'. No se permite duplicar trámites del mismo servicio."
+                'categoria' => "Ya cuentas con una solicitud de {$request->tipo_solicitud} para '{$categoriaNombre}'. No se permite duplicar tr\u{00E1}mites de la misma categor\u{00ED}a."
             ])->withInput();
         }
 
-        if ($request->categoria === 'Licencia Office 365' && $request->tipo_solicitud === 'ALTA') {
-            // Office 365 se asocia a una cuenta de correo: requiere una ALTA previa de ABC con correo (AD-EX o EX)
-            $categoriasCorreo = CategoriaServicio::whereIn('nombre_categoria', \App\Support\ListasFormato::categoriasConCorreo())->pluck('id');
+        // Categorias que se traslapan (por ejemplo, la "doble" AD-EX incluye usuario y correo): no se pueden pedir juntas.
+        $categoriasIncompatibles = \App\Support\ListasFormato::categoriasIncompatibles()[$request->categoria] ?? [];
 
-            $tieneCorreo = Solicitud::where('usuario_id', $usuario->id)
-                ->where('tipo_solicitud', 'ALTA')
-                ->whereIn('categoria_id', $categoriasCorreo)
+        if (!empty($categoriasIncompatibles)) {
+            $idsIncompatibles = CategoriaServicio::where('servicio_id', $servicioDb->id)
+                ->whereIn('nombre_categoria', $categoriasIncompatibles)
+                ->pluck('id');
+
+            $hayTraslape = Solicitud::where('usuario_id', $usuario->id)
+                ->where('tipo_solicitud', $request->tipo_solicitud)
+                ->whereIn('categoria_id', $idsIncompatibles)
                 ->exists();
 
-            if (!$tieneCorreo) {
+            if ($hayTraslape) {
                 return back()->withErrors([
-                    'categoria' => 'Para solicitar la licencia de Office 365 necesitas tener una solicitud previa de ALTA con cuenta de correo (AD-EX USUARIO Y CUENTA DE CORREO o EX CUENTA DE CORREO).'
+                    'categoria' => "Ya cuentas con una solicitud de {$request->tipo_solicitud} que se traslapa con '{$categoriaNombre}' (la categor\u{00ED}a AD-EX incluye el usuario y el correo)."
                 ])->withInput();
             }
         }
+
+        // La licencia de Office 365 ya no exige un alta previa: el area de Sistemas revisa cada solicitud.
 
         $rutaImagen = 'pendiente.jpg';
         if ($request->hasFile('imagen_evidencia')) {

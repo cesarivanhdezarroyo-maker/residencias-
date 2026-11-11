@@ -62,4 +62,29 @@ class ListasFormato
     {
         return ['AD-EX USUARIO Y CUENTA DE CORREO', 'EX CUENTA DE CORREO'];
     }
+
+    /**
+     * Servicios en los que solo se permite UNA solicitud por tipo (no varias categorias).
+     * En los demas se puede pedir una solicitud por categoria.
+     *
+     * @return string[]
+     */
+    public static function serviciosUnaSolicitud(): array
+    {
+        return ['PERFILES_DE_ACCESO_A_INTERNET'];
+    }
+
+    /**
+     * Categorias que se traslapan y no se pueden pedir juntas: la "doble" incluye a las otras dos.
+     *
+     * @return array<string, string[]>
+     */
+    public static function categoriasIncompatibles(): array
+    {
+        return [
+            'AD-EX USUARIO Y CUENTA DE CORREO' => ['AD USUARIO', 'EX CUENTA DE CORREO'],
+            'AD USUARIO' => ['AD-EX USUARIO Y CUENTA DE CORREO'],
+            'EX CUENTA DE CORREO' => ['AD-EX USUARIO Y CUENTA DE CORREO'],
+        ];
+    }
 }
