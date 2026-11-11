@@ -169,6 +169,10 @@ class SolicitudController extends Controller
         $sheet->setCellValue('K39', $configExcel->enlace_nombre);
         $sheet->setCellValue('T39', $configExcel->jefe_servicios_nombre); 
 
+        // Impresion: escala fija para que la responsiva (fila 45) quepa completa en la pagina
+        $sheet->getPageSetup()->setFitToPage(false);
+        $sheet->getPageSetup()->setScale(75);
+
         $writer = new XlsxWriter($spreadsheet);
         $writer->setPreCalculateFormulas(true);
         
