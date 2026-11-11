@@ -33,11 +33,20 @@ class ServicioRegistrado extends Model
 
     /**
      * Catálogo para el formulario "Agregar un servicio que ya tengo".
-     * Debe usar EXACTAMENTE los mismos textos que SolicitudController::getCatalogo()
-     * (así una baja aprobada encuentra el servicio que corresponde).
+     * Si existe App\Support\ListasFormato (paquete de listas del formato), usa EXACTAMENTE sus nombres.
+     * Si no, usa el catálogo anterior, para que este apartado funcione sin importar el orden de instalación.
+     * Debe coincidir siempre con SolicitudController::getCatalogo().
      */
     public static function catalogo(): array
     {
+        if (class_exists(\App\Support\ListasFormato::class)) {
+            $resultado = [];
+            foreach (\App\Support\ListasFormato::catalogo() as $servicio => $info) {
+                $resultado[$servicio] = array_values($info['categorias']);
+            }
+            return $resultado;
+        }
+
         return [
             'Cuentas de Red y Correo Institucional (ABC)' => [
                 'AD USUARIO (Cuenta de Red)',
@@ -147,12 +156,7 @@ class ServicioRegistrado extends Model
             return null;
         }
 
-        // Si esta BAJA ya dio de baja un recurso, no volver a procesar otro
-        // al guardar la misma solicitud o repetir el comando de sincronizacion.
         $yaMarcados = self::where('baja_solicitud_id', $solicitud->id)->count();
-        if ($yaMarcados > 0) {
-            return null;
-        }
 
         $base = self::where('usuario_id', $solicitud->usuario_id)
             ->where('servicio', $servicio)
@@ -168,12 +172,9 @@ class ServicioRegistrado extends Model
                 ->get();
 
             if ($coincidencias->isEmpty()) {
-                return 'No se encontró un servicio activo con el usuario o equipo "' . $identificador . '", por lo que "Mis servicios registrados" no cambió.';
-            }
-
-            // Un identificador repetido tampoco autoriza a modificar varios recursos.
-            if ($coincidencias->count() !== 1) {
-                return 'Hay varios servicios activos que coinciden con ese identificador. Revisa cuál debe darse de baja; no se modificó ninguno.';
+                return $yaMarcados > 0
+                    ? null
+                    : 'No se encontró un servicio activo con el usuario o equipo "' . $identificador . '", por lo que "Mis servicios registrados" no cambió.';
             }
 
             self::whereIn('id', $coincidencias->pluck('id'))
@@ -194,6 +195,6 @@ class ServicioRegistrado extends Model
             return 'La persona tiene varios servicios de este tipo en "Mis servicios registrados". Escribe en "Usuario dado de baja" cuál es, para que se actualice solo ese.';
         }
 
-        return 'No se encontró un servicio activo de esa categoría. La solicitud se guardó, pero "Mis servicios registrados" no cambió.';
+        return null;
     }
 }

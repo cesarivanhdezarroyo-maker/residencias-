@@ -23,6 +23,7 @@
             <p class="text-sm text-gray-600">
                 Aquí aparecen los servicios tecnológicos que tienes activos: los que registraste tú y los que se aprobaron
                 desde tus solicitudes. Registrar un servicio aquí <strong>no genera una solicitud</strong>.
+                En los servicios aprobados puedes consultar el usuario y la contraseña que te asignó el área de Sistemas.
             </p>
 
             {{-- Servicios activos --}}
@@ -38,7 +39,8 @@
                                 <tr class="text-left text-xs text-gray-500 border-b">
                                     <th class="py-2 pr-3">Servicio</th>
                                     <th class="pr-3">Categoría</th>
-                                    <th class="pr-3">Cuenta o equipo</th>
+                                    <th class="pr-3">Usuario o cuenta</th>
+                                    <th class="pr-3">Contraseña</th>
                                     <th class="pr-3">Origen</th>
                                     <th class="pr-3">Fecha</th>
                                     <th></th>
@@ -46,13 +48,27 @@
                             </thead>
                             <tbody>
                                 @foreach($activos as $s)
+                                    @php
+                                        $usuarioMostrado = ($s->origen === 'solicitud' && $s->solicitud && $s->solicitud->credencial_usuario)
+                                            ? $s->solicitud->credencial_usuario
+                                            : $s->identificador;
+                                        $conPassword = $s->origen === 'solicitud' && $s->solicitud && $s->solicitud->credencial_password;
+                                    @endphp
                                     <tr class="border-b align-top">
                                         <td class="py-2 pr-3">{{ $s->servicio }}</td>
                                         <td class="pr-3">{{ $s->categoria }}</td>
                                         <td class="pr-3">
-                                            {{ $s->identificador ?? '—' }}
+                                            {{ $usuarioMostrado ?? '—' }}
                                             @if($s->notas)
                                                 <div class="text-xs text-gray-500 italic">{{ $s->notas }}</div>
+                                            @endif
+                                        </td>
+                                        <td class="pr-3 whitespace-nowrap">
+                                            @if($conPassword)
+                                                <span id="pw-{{ $s->id }}" class="font-mono text-xs">••••••••</span>
+                                                <button type="button" data-ver="{{ $s->id }}" class="text-xs text-[#621132] underline ml-1">Mostrar</button>
+                                            @else
+                                                <span class="text-gray-400">—</span>
                                             @endif
                                         </td>
                                         <td class="pr-3">
@@ -78,6 +94,7 @@
                             </tbody>
                         </table>
                     </div>
+                    <p class="text-xs text-gray-500 mt-3">No compartas tu contraseña. Se oculta sola a los 30 segundos de mostrarla.</p>
                 @endif
             </div>
 
@@ -85,8 +102,8 @@
             <div class="bg-white shadow rounded-lg p-6">
                 <h3 class="text-lg font-bold text-[#621132] mb-1">Agregar un servicio que ya tengo</h3>
                 <p class="text-xs text-gray-500 mb-4">
-                    Es solo un registro informativo. <strong>No escribas contraseñas.</strong>
-                    El área de Sistemas lo consulta, pero no sustituye a una solicitud.
+                    Es solo un registro informativo. Escribe tu <strong>usuario, correo o nombre del equipo</strong>;
+                    <strong>no escribas contraseñas</strong>. No sustituye a una solicitud.
                 </p>
 
                 <form action="{{ route('servicios.store') }}" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -112,7 +129,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs text-gray-600 mb-1">Usuario, correo o nombre del equipo (opcional)</label>
+                        <label class="block text-xs text-gray-600 mb-1">Usuario, correo o nombre del equipo</label>
                         <input type="text" name="identificador" value="{{ old('identificador') }}" maxlength="150"
                                class="w-full rounded border-gray-300 shadow-sm focus:border-[#621132] focus:ring-[#621132] text-sm">
                     </div>
@@ -169,5 +186,42 @@
 
         selServicio.addEventListener('change', cargarCategorias);
         cargarCategorias();
+
+        // Mostrar la contraseña asignada: se pide al servidor solo al pulsar "Mostrar" y se oculta a los 30 segundos
+        var URL_PLANTILLA = @json(route('servicios.credencial', ['id' => 0]));
+        var metaToken = document.querySelector('meta[name="csrf-token"]');
+        var campoToken = document.querySelector('input[name="_token"]');
+        var TOKEN = metaToken ? metaToken.getAttribute('content') : (campoToken ? campoToken.value : '');
+
+        document.querySelectorAll('[data-ver]').forEach(function (boton) {
+            var id = boton.getAttribute('data-ver');
+            var celda = document.getElementById('pw-' + id);
+            var temporizador = null;
+
+            function ocultar() {
+                clearTimeout(temporizador);
+                celda.textContent = '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022';
+                boton.textContent = 'Mostrar';
+                boton.dataset.visible = '0';
+            }
+
+            boton.addEventListener('click', function () {
+                if (boton.dataset.visible === '1') { ocultar(); return; }
+
+                fetch(URL_PLANTILLA.replace('/0/', '/' + id + '/'), {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': TOKEN, 'Accept': 'application/json' },
+                    credentials: 'same-origin'
+                })
+                .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+                .then(function (d) {
+                    celda.textContent = d.password ? d.password : '(sin contraseña)';
+                    boton.textContent = 'Ocultar';
+                    boton.dataset.visible = '1';
+                    temporizador = setTimeout(ocultar, 30000);
+                })
+                .catch(function () { celda.textContent = 'No disponible'; });
+            });
+        });
     </script>
 </x-app-layout>

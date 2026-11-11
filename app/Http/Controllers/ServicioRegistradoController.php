@@ -12,7 +12,8 @@ class ServicioRegistradoController extends Controller
     /** "Mis servicios registrados": los que declaró el trabajador y los de solicitudes aprobadas. */
     public function index()
     {
-        $servicios = ServicioRegistrado::where('usuario_id', Auth::id())
+        $servicios = ServicioRegistrado::with('solicitud')
+            ->where('usuario_id', Auth::id())
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -87,5 +88,31 @@ class ServicioRegistradoController extends Controller
         $registro->delete();
 
         return redirect()->route('servicios.index')->with('success', 'Se quitó el registro.');
+    }
+
+    /**
+     * Devuelve el usuario y la contraseña que Sistemas asignó a un servicio aprobado de la persona que
+     * lo pide. Solo del propio dueño, solo de servicios que vienen de una solicitud, solo por POST y sin
+     * guardarse en caché. La contraseña no viaja en la página: se pide al pulsar "Mostrar".
+     */
+    public function credencial($id)
+    {
+        $registro = ServicioRegistrado::with('solicitud')
+            ->where('usuario_id', Auth::id())
+            ->where('origen', 'solicitud')
+            ->findOrFail($id);
+
+        $solicitud = $registro->solicitud;
+
+        if (!$solicitud) {
+            abort(404);
+        }
+
+        return response()
+            ->json([
+                'usuario' => $solicitud->credencial_usuario ?? $registro->identificador,
+                'password' => $solicitud->credencial_password,
+            ])
+            ->header('Cache-Control', 'no-store, private');
     }
 }

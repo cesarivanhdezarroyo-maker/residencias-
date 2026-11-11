@@ -88,3 +88,6 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->group(
 });
 
 require __DIR__.'/auth.php';
+
+// ---- Mis servicios registrados: ver la contrasena asignada ----
+Route::post('/mis-servicios/{id}/credencial', [\App\Http\Controllers\ServicioRegistradoController::class, 'credencial'])->middleware(['auth', \App\Http\Middleware\TrabajadorMiddleware::class, 'throttle:30,1'])->name('servicios.credencial');
