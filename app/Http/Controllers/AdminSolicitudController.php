@@ -153,14 +153,19 @@ class AdminSolicitudController extends Controller
         $usuario = Usuario::findOrFail($id);
 
         $validated = $request->validate([
-            'credencial_usuario' => ['required', 'string', 'size:6', \Illuminate\Validation\Rule::unique('usuarios', 'usuario_sistema')->ignore($usuario->id)],
+            'credencial_usuario' => ['nullable', 'string', 'size:6', \Illuminate\Validation\Rule::unique('usuarios', 'usuario_sistema')->ignore($usuario->id)],
             'credencial_password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
         ]);
 
-        $usuario->update([
-            'usuario_sistema' => $validated['credencial_usuario'],
-            'password' => Hash::make($validated['credencial_password']),
-        ]);
+        $cambios = ['password' => Hash::make($validated['credencial_password'])];
+
+        // El usuario es opcional: si se deja vacio se conserva el actual (o la matricula, si nunca se le asigno uno)
+        if (!empty($validated['credencial_usuario'])) {
+            $cambios['usuario_sistema'] = $validated['credencial_usuario'];
+        }
+
+        $usuario->update($cambios);
+        $usuarioAcceso = $usuario->usuario_sistema ?: $usuario->numero_empleado;
 
         try {
             $destinatarios = array_values(array_filter([
@@ -169,13 +174,15 @@ class AdminSolicitudController extends Controller
             ]));
 
             Mail::to($destinatarios)->send(
-                new CredencialesPlataformaActualizadas($usuario, $validated['credencial_usuario'], $validated['credencial_password'])
+                new CredencialesPlataformaActualizadas($usuario, $usuarioAcceso, $validated['credencial_password'])
             );
         } catch (\Exception $e) {
             report($e);
         }
 
-        return back()->with('success', 'Las credenciales de acceso a la plataforma de ' . $usuario->name . ' fueron actualizadas.');
+        return back()->with('success', empty($validated['credencial_usuario'])
+            ? 'La contraseña de acceso a la plataforma de ' . $usuario->name . ' fue actualizada.'
+            : 'Las credenciales de acceso a la plataforma de ' . $usuario->name . ' fueron actualizadas.');
     }
 
     /**

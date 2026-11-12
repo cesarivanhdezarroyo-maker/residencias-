@@ -65,8 +65,16 @@
                         @method('PATCH')
 
                         <div>
-                            <label class="block text-xs font-bold text-gray-700 mb-1">Usuario (6 caracteres)</label>
-                            <input type="text" name="credencial_usuario" minlength="6" maxlength="6" required
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Usuario (6 caracteres, opcional)</label>
+                            <p class="text-xs text-gray-500 mb-1">
+                                Déjalo vacío para cambiar solo la contraseña.
+                                @if($usuario->usuario_sistema)
+                                    Se conserva el usuario <span class="font-mono">{{ $usuario->usuario_sistema }}</span>.
+                                @else
+                                    Seguirá entrando con su matrícula.
+                                @endif
+                            </p>
+                            <input type="text" name="credencial_usuario" minlength="6" maxlength="6" placeholder="Vacío = no cambiar"
                                    class="text-sm rounded border-gray-300 shadow-sm focus:border-[#621132] focus:ring-[#621132] w-full">
                         </div>
                         <div>
