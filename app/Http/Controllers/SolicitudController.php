@@ -174,8 +174,9 @@ class SolicitudController extends Controller
         $sheet->setCellValue('T10', $usuario->apellidos);
         $sheet->setCellValue('H11', $usuario->numero_empleado);
         $sheet->setCellValue('N11', $usuario->puesto->nombre_puesto ?? 'Personal');
-        $sheet->setCellValue('AB11', 'Por TI'); 
         $equipo = app(\App\Services\EquipoLookupService::class)->buscar($usuario->numero_empleado);
+        // RED = extension telefonica (5 digitos) de la base de equipos; si no hay dato, queda como antes
+        $sheet->setCellValue('AB11', $equipo['extension'] ?? 'Por TI'); 
         $sheet->setCellValue('Y16', $equipo['ip'] ?? 'Por asignar por TI');
         $sheet->setCellValue('Y17', $equipo['hostname'] ?? 'Por asignar por TI');
         $sheet->setCellValue('H19', $solicitud->tipo_solicitud);
