@@ -50,6 +50,8 @@ class AdminMensajeController extends Controller
         // Totales globales (antes de filtrar), para los botones de filtro
         $totalSinLeer = $conversaciones->where('sin_leer', '>', 0)->count();
         $totalPorConfirmar = $conversaciones->where('por_confirmar', '>', 0)->count();
+        // Conversaciones de cuentas que ya no existen (para ofrecer limpiarlas)
+        $totalEliminados = $conversaciones->filter(fn ($c) => !$c->usuario)->count();
 
         if ($filtro === 'sin_leer') {
             $conversaciones = $conversaciones->filter(fn ($c) => $c->sin_leer > 0);
@@ -74,6 +76,7 @@ class AdminMensajeController extends Controller
             'busqueda' => $busqueda,
             'totalSinLeer' => $totalSinLeer,
             'totalPorConfirmar' => $totalPorConfirmar,
+            'totalEliminados' => $totalEliminados,
         ]);
     }
 
@@ -186,5 +189,36 @@ class AdminMensajeController extends Controller
         }
 
         return back();
+    }
+
+    /**
+     * Elimina TODA la conversacion con una persona (avisos y mensajes). Pensado sobre todo para cuentas
+     * que ya fueron eliminadas, cuyos mensajes quedan sin dueño.
+     */
+    public function destroyConversacion($id)
+    {
+        $total = Mensaje::where('usuario_id', $id)->count();
+        Mensaje::where('usuario_id', $id)->delete();
+
+        return redirect()->route('admin.mensajes.index')
+            ->with('success', "Se eliminó la conversación ({$total} mensaje(s)).");
+    }
+
+    /** Elimina un solo mensaje. */
+    public function destroy($id)
+    {
+        Mensaje::findOrFail($id)->delete();
+
+        return back()->with('success', 'Se eliminó el mensaje.');
+    }
+
+    /** Elimina de una vez las conversaciones de todas las cuentas que ya no existen. */
+    public function limpiarEliminados()
+    {
+        $total = Mensaje::whereNotIn('usuario_id', Usuario::select('id'))->count();
+        Mensaje::whereNotIn('usuario_id', Usuario::select('id'))->delete();
+
+        return redirect()->route('admin.mensajes.index')
+            ->with('success', "Se eliminaron {$total} mensaje(s) de usuarios que ya no existen.");
     }
 }

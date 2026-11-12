@@ -47,6 +47,22 @@
                 </form>
             </div>
 
+            @if($totalEliminados > 0)
+                <div class="bg-amber-50 border-l-4 border-amber-400 p-4 flex items-center justify-between gap-4">
+                    <p class="text-sm text-amber-900">
+                        Hay {{ $totalEliminados }} conversación(es) de usuarios que ya no existen.
+                    </p>
+                    <form action="{{ route('admin.mensajes.limpiar') }}" method="POST"
+                          onsubmit="return confirm('¿Eliminar todas las conversaciones de usuarios que ya no existen? Esta acción no se puede deshacer.');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 py-2 rounded whitespace-nowrap">
+                            Eliminar todas
+                        </button>
+                    </form>
+                </div>
+            @endif
+
             {{-- Conversaciones --}}
             <div class="bg-white shadow rounded-lg divide-y border-t-4 border-[#621132]">
                 @forelse($conversaciones as $c)
@@ -56,8 +72,9 @@
                         $fecha = \Carbon\Carbon::parse($c->ultimo)->format('d/m/Y H:i');
                         $ultimo = $c->ultimo_mensaje;
                     @endphp
+                    <div class="flex items-center hover:bg-[#fdf2f6] {{ $c->sin_leer > 0 ? 'bg-[#fdf2f6]' : '' }}">
                     <a href="{{ route('admin.mensajes.show', $c->usuario_id) }}"
-                       class="flex items-center gap-4 p-4 hover:bg-[#fdf2f6] {{ $c->sin_leer > 0 ? 'bg-[#fdf2f6]' : '' }}">
+                       class="flex flex-1 min-w-0 items-center gap-4 p-4">
                         <div class="flex-shrink-0 w-10 h-10 rounded-full bg-[#621132] text-white flex items-center justify-center font-bold">
                             {{ $inicial }}
                         </div>
@@ -94,6 +111,14 @@
                             </div>
                         </div>
                     </a>
+
+                    <form action="{{ route('admin.mensajes.destroyConversacion', $c->usuario_id) }}" method="POST" class="px-4"
+                          onsubmit="return confirm('¿Eliminar toda esta conversación? Esta acción no se puede deshacer.');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="text-xs underline {{ $c->usuario ? 'text-gray-500' : 'text-red-600 font-bold' }}">Eliminar</button>
+                    </form>
+                    </div>
                 @empty
                     <p class="p-6 text-sm text-gray-500">
                         @if($filtro || $busqueda)

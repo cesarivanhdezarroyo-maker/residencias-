@@ -91,3 +91,10 @@ require __DIR__.'/auth.php';
 
 // ---- Mis servicios registrados: ver la contrasena asignada ----
 Route::post('/mis-servicios/{id}/credencial', [\App\Http\Controllers\ServicioRegistradoController::class, 'credencial'])->middleware(['auth', \App\Http\Middleware\TrabajadorMiddleware::class, 'throttle:30,1'])->name('servicios.credencial');
+
+// ---- Borrar mensajes (solo administrador) ----
+Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->group(function () {
+    Route::delete('/admin/mensajes/usuario/{id}', [\App\Http\Controllers\AdminMensajeController::class, 'destroyConversacion'])->whereNumber('id')->name('admin.mensajes.destroyConversacion');
+    Route::delete('/admin/mensajes-eliminados', [\App\Http\Controllers\AdminMensajeController::class, 'limpiarEliminados'])->name('admin.mensajes.limpiar');
+    Route::delete('/admin/mensajes/{id}', [\App\Http\Controllers\AdminMensajeController::class, 'destroy'])->whereNumber('id')->name('admin.mensajes.destroy');
+});

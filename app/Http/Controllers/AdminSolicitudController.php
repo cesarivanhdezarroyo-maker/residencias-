@@ -45,7 +45,7 @@ class AdminSolicitudController extends Controller
         // Cargamos la solicitud primero para saber de qué servicio se trata
         // antes de validar -- así podemos exigir formato de correo real
         // solo cuando de verdad aplica (Cuentas de Red y Correo Institucional).
-        $solicitud = Solicitud::with(['usuario', 'servicio'])->findOrFail($id);
+        $solicitud = Solicitud::with(['usuario', 'servicio', 'categoria'])->findOrFail($id);
 
         $esCorreoInstitucional = $solicitud->tipo_solicitud === 'ALTA'
             && $solicitud->servicio
@@ -53,9 +53,12 @@ class AdminSolicitudController extends Controller
 
         $validated = $request->validate([
             'estado_solicitud' => 'required|in:Pendiente,Aprobado,Rechazado',
-            'credencial_usuario' => $esCorreoInstitucional
-                ? 'nullable|email:rfc|max:255'
-                : 'nullable|string|max:255',
+            'credencial_usuario' => ['nullable', 'string', 'max:255', function ($attribute, $value, $fail) use ($esCorreoInstitucional) {
+                // El usuario se acepta con o sin @; si lleva @, debe ser un correo valido
+                if ($esCorreoInstitucional && $value && str_contains($value, '@') && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                    $fail("Si el usuario lleva @, debe ser un correo v\u{00E1}lido (por ejemplo, nombre@issste.gob.mx).");
+                }
+            }],
             'credencial_password' => 'nullable|string|max:255',
             'credencial_notas' => 'nullable|string|max:2000|required_if:estado_solicitud,Rechazado',
         ], [
@@ -76,7 +79,10 @@ class AdminSolicitudController extends Controller
         // Si es el servicio de Correo Institucional y ya se capturó un correo
         // válido (ya lo garantiza la validación de arriba), ese dato se
         // convierte en el correo institucional oficial de la persona.
-        if ($esCorreoInstitucional && $solicitud->credencial_usuario) {
+        if ($esCorreoInstitucional
+            && $solicitud->credencial_usuario
+            && str_contains($solicitud->credencial_usuario, '@')
+            && in_array($solicitud->categoria->nombre_categoria ?? '', \App\Support\ListasFormato::categoriasConCorreo(), true)) {
             $solicitud->usuario->update(['correo_institucional' => $solicitud->credencial_usuario]);
         }
 

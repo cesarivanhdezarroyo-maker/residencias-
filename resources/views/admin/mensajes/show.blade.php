@@ -9,7 +9,15 @@
                     <p class="text-xs text-gray-500">Matrícula {{ $usuario->numero_empleado }}</p>
                 @endif
             </div>
-            <a href="{{ route('admin.mensajes.index') }}" class="text-sm text-gray-600 underline">&larr; Todas las conversaciones</a>
+            <div class="flex items-center gap-4">
+                <a href="{{ route('admin.mensajes.index') }}" class="text-sm text-gray-600 underline">&larr; Todas las conversaciones</a>
+                <form action="{{ route('admin.mensajes.destroyConversacion', $id) }}" method="POST"
+                      onsubmit="return confirm('¿Eliminar toda esta conversación? Esta acción no se puede deshacer.');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="text-sm text-red-600 underline">Eliminar conversación</button>
+                </form>
+            </div>
         </div>
     </x-slot>
 
@@ -132,6 +140,13 @@
                             </div>
 
                             <p class="text-sm text-gray-700 mt-3">{!! nl2br(e($m->cuerpo)) !!}</p>
+
+                            <form action="{{ route('admin.mensajes.destroy', $m->id) }}" method="POST" class="mt-2"
+                                  onsubmit="return confirm('¿Eliminar este mensaje?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-xs text-red-600 underline">Eliminar mensaje</button>
+                            </form>
 
                             @if(!$m->de_admin && $usuario)
                                 <div class="mt-3">
