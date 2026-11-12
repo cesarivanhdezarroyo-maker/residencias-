@@ -46,30 +46,58 @@ class EquipoLookupService
     private function buscarPorBaseDeDatos(string $numero): ?array
     {
         $col = config('equipos.db.columnas');
+        $conexion = DB::connection(config('equipos.db.conexion'));
+        $tabla = config('equipos.db.tabla');
 
+        // IP y hostname pertenecen al EQUIPO: se filtra por tipo y solo se usan si hay uno claro
         $campos = [$col['ip'] . ' as ip'];
         if (!empty($col['hostname'])) {
             $campos[] = $col['hostname'] . ' as hostname';
         }
 
-        $filas = DB::connection(config('equipos.db.conexion'))
-            ->table(config('equipos.db.tabla'))
+        $filas = $conexion->table($tabla)
             ->select($campos)
             ->where($col['numero'], $numero)
             ->when(!empty($col['activo']), fn ($q) => $q->where($col['activo'], 1))
             ->when(
                 !empty($col['tipo']) && !empty(config('equipos.db.tipo_valor')),
-                fn ($q) => $q->where($col['tipo'], 'like', '%' . config('equipos.db.tipo_valor') . '%')
+                function ($q) use ($col) {
+                    // EQUIPOS_TIPO_VALOR admite varios valores separados por coma: "comput,laptop,pc"
+                    $valores = array_filter(array_map('trim', explode(',', (string) config('equipos.db.tipo_valor'))));
+                    $q->where(function ($sub) use ($col, $valores) {
+                        foreach ($valores as $valor) {
+                            $sub->orWhere($col['tipo'], 'like', '%' . $valor . '%');
+                        }
+                    });
+                }
             )
             ->limit(2)
             ->get();
 
+        $resultado = null;
+
         if ($filas->count() > 1) {
             Log::warning('Hay más de un equipo que cumple para un mismo número de empleado; no se completa la IP.');
-            return null;
+        } elseif ($filas->count() === 1) {
+            $resultado = (array) $filas->first();
         }
 
-        return $filas->count() === 1 ? (array) $filas->first() : null;
+        // La EXTENSION (campo RED) pertenece a la PERSONA: se usa si todas sus filas coinciden en una misma,
+        // aunque tenga varios equipos y no se pueda elegir la IP.
+        if (!empty($col['extension'])) {
+            $extensiones = $conexion->table($tabla)
+                ->where($col['numero'], $numero)
+                ->whereNotNull($col['extension'])
+                ->where($col['extension'], '<>', '')
+                ->distinct()
+                ->pluck($col['extension']);
+
+            if ($extensiones->count() === 1) {
+                $resultado = ($resultado ?? []) + ['extension' => $extensiones->first()];
+            }
+        }
+
+        return $resultado;
     }
 
     /** Opción B: API del otro sistema. Respuesta esperada: {"ip": "...", "hostname": "..."} */
@@ -87,7 +115,7 @@ class EquipoLookupService
         $json = $respuesta->json();
 
         return is_array($json)
-            ? ['ip' => $json['ip'] ?? null, 'hostname' => $json['hostname'] ?? null]
+            ? ['ip' => $json['ip'] ?? null, 'hostname' => $json['hostname'] ?? null, 'extension' => $json['extension'] ?? null]
             : null;
     }
 
@@ -111,6 +139,12 @@ class EquipoLookupService
         $host = trim((string) ($crudo['hostname'] ?? ''));
         if ($host !== '' && preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/', $host)) {
             $resultado['hostname'] = $host;
+        }
+
+        // RED = extension telefonica: el formato pide EXACTAMENTE 5 digitos (celda AB11)
+        $extension = trim((string) ($crudo['extension'] ?? ''));
+        if (preg_match('/^\d{5}$/', $extension)) {
+            $resultado['extension'] = $extension;
         }
 
         return $resultado ?: null;

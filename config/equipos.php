@@ -19,6 +19,7 @@ return [
             'hostname' => env('EQUIPOS_COL_HOSTNAME', 'hostname'),
             'activo' => env('EQUIPOS_COL_ACTIVO', null), // opcional: columna 1/0
             'tipo' => env('EQUIPOS_COL_TIPO', null),     // opcional: columna con el tipo de equipo
+            'extension' => env('EQUIPOS_COL_EXTENSION', null), // opcional: columna con la extension telefonica (campo RED)
         ],
         // Si el empleado tiene varios equipos y la vista trae el tipo, se usa solo el de este tipo
         // (por ejemplo "computadora"). Se compara con LIKE, sin importar mayúsculas.

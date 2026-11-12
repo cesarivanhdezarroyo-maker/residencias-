@@ -54,6 +54,7 @@ class ProbarEquipos extends Command
 
         $this->info('IP: ' . ($resultado['ip'] ?? '(sin dato)'));
         $this->info('Hostname: ' . ($resultado['hostname'] ?? '(sin dato)'));
+        $this->info('Extension (RED): ' . ($resultado['extension'] ?? '(sin dato)'));
 
         return self::SUCCESS;
     }
