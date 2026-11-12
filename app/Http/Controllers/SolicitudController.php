@@ -117,6 +117,24 @@ class SolicitudController extends Controller
             }
         }
 
+        // Si la persona ya registro este servicio como suyo en "Mis servicios" (por ella o aprobado), o tiene uno que
+        // lo incluye o se traslapa, no se vuelve a pedir.
+        if ($request->tipo_solicitud === 'ALTA') {
+            $enConflicto = \App\Support\ReglasServicios::categoriasEnConflicto($request->servicio, $request->categoria);
+
+            $yaLoTiene = \App\Models\ServicioRegistrado::where('usuario_id', $usuario->id)
+                ->where('servicio', $servicioNombre)
+                ->where('estado', 'Activo')
+                ->whereIn('categoria', $enConflicto)
+                ->exists();
+
+            if ($yaLoTiene) {
+                return back()->withErrors([
+                    'categoria' => "Ya tienes registrado este servicio en 'Mis servicios'. Si ya no lo tienes, qu\u{00ED}talo de ah\u{00ED} antes de solicitarlo."
+                ])->withInput();
+            }
+        }
+
         // La licencia de Office 365 ya no exige un alta previa: el area de Sistemas revisa cada solicitud.
 
         $rutaImagen = 'pendiente.jpg';

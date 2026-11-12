@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CategoriaServicio;
+use App\Models\Servicio;
 use App\Models\ServicioRegistrado;
+use App\Models\Solicitud;
+use App\Support\ReglasServicios;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -24,7 +28,11 @@ class ServicioRegistradoController extends Controller
         return view('servicios.index', compact('activos', 'bajas', 'catalogo'));
     }
 
-    /** Registrar un servicio que la persona ya tiene (no genera una solicitud). */
+    /**
+     * Registrar un servicio que la persona ya tiene (no genera una solicitud).
+     * Se revisa AL REGISTRAR: que no lo tenga ya (ni uno que lo incluya o se traslape) y que no tenga una
+     * solicitud de alta en revision o rechazada del mismo servicio (esas se atienden en "Mis solicitudes").
+     */
     public function store(Request $request)
     {
         $catalogo = ServicioRegistrado::catalogo();
@@ -36,7 +44,10 @@ class ServicioRegistradoController extends Controller
             'notas' => ['nullable', 'string', 'max:500'],
         ]);
 
-        if (!in_array($validated['categoria'], $catalogo[$validated['servicio']], true)) {
+        $servicio = $validated['servicio'];
+        $categoria = $validated['categoria'];
+
+        if (!in_array($categoria, $catalogo[$servicio], true)) {
             return back()->withErrors(['categoria' => 'La categoría no corresponde al servicio elegido.'])->withInput();
         }
 
@@ -49,26 +60,49 @@ class ServicioRegistradoController extends Controller
         $identificador = isset($validated['identificador']) && trim($validated['identificador']) !== ''
             ? trim($validated['identificador'])
             : null;
+        $enConflicto = ReglasServicios::categoriasEnConflicto($servicio, $categoria);
 
-        $yaExiste = ServicioRegistrado::where('usuario_id', Auth::id())
-            ->where('servicio', $validated['servicio'])
-            ->where('categoria', $validated['categoria'])
+        // 1) Ya lo tiene registrado (por ella o aprobado), o tiene uno que lo incluye o se traslapa
+        $yaRegistrado = ServicioRegistrado::where('usuario_id', Auth::id())
+            ->where('servicio', $servicio)
             ->where('estado', 'Activo')
-            ->when(
-                $identificador === null,
-                fn ($q) => $q->whereNull('identificador'),
-                fn ($q) => $q->where('identificador', $identificador)
-            )
+            ->whereIn('categoria', $enConflicto)
             ->exists();
 
-        if ($yaExiste) {
-            return back()->withErrors(['servicio' => 'Ya tienes registrado este servicio con esos mismos datos.'])->withInput();
+        if ($yaRegistrado) {
+            return back()->withErrors(['servicio' => 'Ya tienes registrado este servicio, o uno que lo incluye o se traslapa con él. Si quieres cambiarlo, quita primero el anterior.'])->withInput();
+        }
+
+        // 2) Tiene una solicitud de alta de este servicio en tramite (en revision o rechazada): se atiende en "Mis solicitudes"
+        $servicioDb = Servicio::where('nombre_servicio', $servicio)->first();
+
+        if ($servicioDb) {
+            $idsCategorias = CategoriaServicio::where('servicio_id', $servicioDb->id)
+                ->whereIn('nombre_categoria', $enConflicto)
+                ->pluck('id');
+
+            $solicitudPrevia = Solicitud::with('categoria')
+                ->where('usuario_id', Auth::id())
+                ->where('tipo_solicitud', 'ALTA')
+                ->whereIn('categoria_id', $idsCategorias)
+                ->whereIn('estado_solicitud', ['Pendiente', 'Enviado', 'Rechazado'])
+                ->first();
+
+            if ($solicitudPrevia) {
+                $nombreCategoria = $solicitudPrevia->categoria->nombre_categoria ?? $categoria;
+
+                $mensaje = $solicitudPrevia->estado_solicitud === 'Rechazado'
+                    ? "Tu solicitud de ALTA de '{$nombreCategoria}' fue rechazada. Corrígela y reenvíala desde \"Mis solicitudes\"."
+                    : "Ya tienes una solicitud de ALTA de '{$nombreCategoria}' en revisión. Espera su resultado en \"Mis solicitudes\".";
+
+                return back()->withErrors(['servicio' => $mensaje])->withInput();
+            }
         }
 
         ServicioRegistrado::create([
             'usuario_id' => Auth::id(),
-            'servicio' => $validated['servicio'],
-            'categoria' => $validated['categoria'],
+            'servicio' => $servicio,
+            'categoria' => $categoria,
             'identificador' => $identificador,
             'notas' => $validated['notas'] ?? null,
             'origen' => 'declarado',

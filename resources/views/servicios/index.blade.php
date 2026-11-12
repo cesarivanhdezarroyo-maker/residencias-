@@ -129,7 +129,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs text-gray-600 mb-1">Usuario, correo o nombre del equipo</label>
+                        <label class="block text-xs text-gray-600 mb-1">Usuario, correo o nombre del equipo (opcional)</label>
                         <input type="text" name="identificador" value="{{ old('identificador') }}" maxlength="150"
                                class="w-full rounded border-gray-300 shadow-sm focus:border-[#621132] focus:ring-[#621132] text-sm">
                     </div>
