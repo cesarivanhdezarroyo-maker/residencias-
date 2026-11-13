@@ -158,18 +158,8 @@ class AdminSolicitudController extends Controller
         $usuario->update($cambios);
         $usuarioAcceso = $usuario->usuario_sistema ?: $usuario->numero_empleado;
 
-        try {
-            $destinatarios = array_values(array_filter([
-                $usuario->correo_personal,
-                $usuario->correo_institucional,
-            ]));
-
-            Mail::to($destinatarios)->send(
-                new CredencialesPlataformaActualizadas($usuario, $usuarioAcceso, $validated['credencial_password'])
-            );
-        } catch (\Exception $e) {
-            report($e);
-        }
+        // La contrasena de la plataforma NO se manda por correo ni por mensaje: quien la olvido no puede entrar a leerlo.
+        // El area de Sistemas se la entrega a la persona directamente.
 
         return back()->with('success', empty($validated['credencial_usuario'])
             ? 'La contraseña de acceso a la plataforma de ' . $usuario->name . ' fue actualizada.'
