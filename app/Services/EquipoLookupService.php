@@ -71,13 +71,38 @@ class EquipoLookupService
                     });
                 }
             )
-            ->limit(2)
+            ->limit(20)
             ->get();
 
         $resultado = null;
 
         if ($filas->count() > 1) {
-            Log::warning('Hay más de un equipo que cumple para un mismo número de empleado; no se completa la IP.');
+            // Varias computadoras: se elige UNA de forma fija (primero la que tenga IP valida y nombre de equipo,
+            // y entre ellas la de nombre menor en orden alfabetico). Es mejor un dato que se corrige a mano en el
+            // formato que un campo vacio; la eleccion queda anotada en el registro del sistema.
+            $candidatas = $filas->map(fn ($fila) => (array) $fila)->all();
+
+            usort($candidatas, function ($a, $b) {
+                $ipA = filter_var($a['ip'] ?? '', FILTER_VALIDATE_IP) ? 0 : 1;
+                $ipB = filter_var($b['ip'] ?? '', FILTER_VALIDATE_IP) ? 0 : 1;
+
+                if ($ipA !== $ipB) {
+                    return $ipA <=> $ipB;
+                }
+
+                $sinNombreA = trim((string) ($a['hostname'] ?? '')) === '' ? 1 : 0;
+                $sinNombreB = trim((string) ($b['hostname'] ?? '')) === '' ? 1 : 0;
+
+                if ($sinNombreA !== $sinNombreB) {
+                    return $sinNombreA <=> $sinNombreB;
+                }
+
+                return strcmp((string) ($a['hostname'] ?? ''), (string) ($b['hostname'] ?? ''));
+            });
+
+            $resultado = $candidatas[0];
+
+            Log::warning('Hay más de un equipo para un mismo número de empleado; se usó ' . ($resultado['hostname'] ?? 'uno sin nombre') . ' (' . ($resultado['ip'] ?? 'sin IP') . ').');
         } elseif ($filas->count() === 1) {
             $resultado = (array) $filas->first();
         }

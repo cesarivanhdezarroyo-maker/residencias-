@@ -47,7 +47,7 @@ class ProbarEquipos extends Command
         $resultado = $servicio->buscar($this->argument('numero'));
 
         if (!$resultado) {
-            $this->warn('Sin resultado válido (no existe, hay más de una coincidencia, el formato no es válido o la consulta falló).');
+            $this->warn('Sin resultado válido (no existe, el formato no es válido o la consulta falló).');
             $this->line('El formato usaría: "Por asignar por TI".');
             return self::SUCCESS;
         }
