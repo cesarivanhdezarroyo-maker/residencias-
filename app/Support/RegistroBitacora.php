@@ -67,6 +67,12 @@ class RegistroBitacora
                     $contexto['entidad_id'] = $solicitud->id;
                     $contexto['afectado'] = $solicitud->usuario;
                     $contexto['detalles']['estado_anterior'] = $solicitud->estado_solicitud;
+                    // Solo en memoria, para saber si algo cambió de verdad; NUNCA se guarda en la bitácora
+                    $contexto['previo'] = [
+                        'credencial_usuario' => (string) $solicitud->credencial_usuario,
+                        'credencial_password' => (string) $solicitud->credencial_password,
+                        'credencial_notas' => (string) $solicitud->credencial_notas,
+                    ];
                     $contexto['extra'] = sprintf(
                         ' #%d (%s: %s / %s)',
                         $solicitud->id,
@@ -113,6 +119,24 @@ class RegistroBitacora
 
             if ($nombre === 'admin.solicitudes.estado') {
                 $detalles['estado_nuevo'] = $request->input('estado_solicitud');
+
+                // Guardar sin cambiar nada (mismo estado y mismos datos) no es un cambio: no se registra
+                if (($detalles['estado_anterior'] ?? null) === $detalles['estado_nuevo']) {
+                    $previo = $contexto['previo'] ?? [];
+                    $datosCambiaron = false;
+
+                    foreach (['credencial_usuario', 'credencial_password', 'credencial_notas'] as $campo) {
+                        if ((string) $request->input($campo, '') !== ($previo[$campo] ?? '')) {
+                            $datosCambiaron = true;
+                        }
+                    }
+
+                    if (!$datosCambiaron) {
+                        return;
+                    }
+
+                    $detalles['datos_actualizados'] = true;
+                }
             }
 
             if ($nombre === 'admin.usuarios.credenciales_plataforma') {
@@ -126,7 +150,9 @@ class RegistroBitacora
                 $descripcion .= ' — ' . $afectado->name . ' (' . $afectado->numero_empleado . ')';
             }
 
-            if (isset($detalles['estado_nuevo'])) {
+            if (!empty($detalles['datos_actualizados'])) {
+                $descripcion .= ': ' . $detalles['estado_nuevo'] . ' (datos actualizados)';
+            } elseif (isset($detalles['estado_nuevo'])) {
                 $descripcion .= ': ' . ($detalles['estado_anterior'] ?? '?') . ' → ' . $detalles['estado_nuevo'];
             }
 
