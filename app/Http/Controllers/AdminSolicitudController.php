@@ -86,7 +86,7 @@ class AdminSolicitudController extends Controller
             $solicitud->usuario->update(['correo_institucional' => $solicitud->credencial_usuario]);
         }
 
-        // Avisamos por correo cuando: (a) el estado cambia a Aprobado/Rechazado por
+        // Avisamos por mensaje dentro de la plataforma (Avisos), sin correo, cuando: (a) el estado cambia a Aprobado/Rechazado por
         // primera vez, o (b) ya estaba en ese estado pero se acaban de actualizar las
         // credenciales o el motivo (el flujo real: primero se aprueba, y las
         // credenciales de México llegan y se capturan después, en otro momento).
@@ -97,16 +97,7 @@ class AdminSolicitudController extends Controller
             || $solicitud->wasChanged('credencial_notas');
 
         if ($huboCambioRelevante && in_array($solicitud->estado_solicitud, ['Aprobado', 'Rechazado'])) {
-            $destinatarios = array_values(array_filter([
-                $solicitud->usuario->correo_personal,
-                $solicitud->usuario->correo_institucional,
-            ]));
-
-            try {
-                Mail::to($destinatarios)->send(new SolicitudActualizada($solicitud));
-            } catch (\Exception $e) {
-                report($e);
-            }
+            $this->avisarSolicitud($solicitud);
         }
 
         return back()->with(
@@ -381,4 +372,73 @@ class AdminSolicitudController extends Controller
 
         return back()->with('success', 'Los datos del Excel se actualizaron correctamente.');
     }
-}
+
+    /**
+     * Avisa a la persona DENTRO de la plataforma (apartado "Avisos") del resultado de su solicitud y, si ya hay
+     * credenciales del servicio, se las entrega ahí. El cuerpo del mensaje se guarda cifrado. No se manda correo.
+     * Un fallo aquí nunca interrumpe la aprobación o el rechazo.
+     */
+    private function avisarSolicitud(Solicitud $solicitud): void
+    {
+        try {
+            $solicitud->loadMissing(['servicio', 'categoria']);
+
+            $detalle = sprintf(
+                '#%d (%s: %s / %s)',
+                $solicitud->id,
+                $solicitud->tipo_solicitud,
+                $solicitud->servicio->nombre_servicio ?? '-',
+                $solicitud->categoria->nombre_categoria ?? '-'
+            );
+
+            if ($solicitud->estado_solicitud === 'Aprobado') {
+                $asunto = 'Solicitud aprobada ' . $detalle;
+                $lineas = ['Tu solicitud ' . $detalle . ' fue aprobada.'];
+
+                if ($solicitud->credencial_usuario || $solicitud->credencial_password) {
+                    $lineas[] = '';
+
+                    if ($solicitud->credencial_usuario) {
+                        $lineas[] = 'Usuario: ' . $solicitud->credencial_usuario;
+                    }
+
+                    if ($solicitud->credencial_password) {
+                        $lineas[] = 'Contraseña: ' . $solicitud->credencial_password;
+                    }
+
+                    $lineas[] = '';
+                    $lineas[] = 'No compartas estos datos. También los puedes consultar en "Mis servicios".';
+                } else {
+                    $lineas[] = '';
+                    $lineas[] = 'Cuando las credenciales estén listas, Sistemas te las enviará por este mismo medio.';
+                }
+
+                if ($solicitud->credencial_notas) {
+                    $lineas[] = '';
+                    $lineas[] = 'Notas: ' . $solicitud->credencial_notas;
+                }
+            } else {
+                $asunto = 'Solicitud rechazada ' . $detalle;
+                $lineas = ['Tu solicitud ' . $detalle . ' fue rechazada.'];
+
+                if ($solicitud->credencial_notas) {
+                    $lineas[] = '';
+                    $lineas[] = 'Motivo: ' . $solicitud->credencial_notas;
+                }
+
+                $lineas[] = '';
+                $lineas[] = 'Puedes corregirla y reenviarla desde "Mis solicitudes".';
+            }
+
+            \App\Models\Mensaje::create([
+                'usuario_id' => $solicitud->usuario_id,
+                'solicitud_id' => $solicitud->id,
+                'de_admin' => true,
+                'asunto' => mb_substr($asunto, 0, 150),
+                'cuerpo' => implode("\n", $lineas),
+                'requiere_confirmacion' => false,
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }}
