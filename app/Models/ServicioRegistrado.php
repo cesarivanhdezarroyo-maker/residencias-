@@ -156,7 +156,8 @@ class ServicioRegistrado extends Model
             return null;
         }
 
-        $yaMarcados = self::where('baja_solicitud_id', $solicitud->id)->count();
+        // Servicios que esta misma baja ya marcó antes: repetir la sincronización no debe cambiar nada
+        $marcados = self::where('baja_solicitud_id', $solicitud->id)->get();
 
         $base = self::where('usuario_id', $solicitud->usuario_id)
             ->where('servicio', $servicio)
@@ -167,15 +168,29 @@ class ServicioRegistrado extends Model
 
         // 1) Si el administrador indicó el usuario o equipo dado de baja, se busca exactamente ese
         if ($identificador !== '') {
+            // Si lo que esta baja ya marcó corresponde a ese identificador, no se vuelve a procesar
+            $yaCorresponde = $marcados->contains(
+                fn ($m) => mb_strtolower((string) $m->identificador) === mb_strtolower($identificador)
+            );
+
+            if ($yaCorresponde) {
+                return null;
+            }
+
             $coincidencias = (clone $base)
                 ->whereRaw('LOWER(identificador) = ?', [mb_strtolower($identificador)])
                 ->get();
 
             if ($coincidencias->isEmpty()) {
-                return $yaMarcados > 0
-                    ? null
+                return $marcados->isNotEmpty()
+                    ? 'Esta baja ya había dado de baja otro servicio y el usuario o equipo escrito ("' . $identificador . '") no coincide con ningún servicio activo; no se hicieron cambios.'
                     : 'No se encontró un servicio activo con el usuario o equipo "' . $identificador . '", por lo que "Mis servicios registrados" no cambió.';
             }
+
+            // Si se corrigió el identificador, se restaura lo que esta baja había marcado antes
+            self::where('baja_solicitud_id', $solicitud->id)
+                ->whereNotIn('id', $coincidencias->pluck('id'))
+                ->update(['estado' => 'Activo', 'baja_solicitud_id' => null]);
 
             self::whereIn('id', $coincidencias->pluck('id'))
                 ->update(['estado' => 'Baja', 'baja_solicitud_id' => $solicitud->id]);
@@ -183,7 +198,12 @@ class ServicioRegistrado extends Model
             return null;
         }
 
-        // 2) Sin identificador: solo se actúa si no hay duda (exactamente un servicio de ese tipo)
+        // 2) Sin identificador: si esta baja ya marcó un servicio, no se marca otro
+        if ($marcados->isNotEmpty()) {
+            return null;
+        }
+
+        // Solo se actúa si no hay duda (exactamente un servicio de ese tipo)
         $activos = (clone $base)->get();
 
         if ($activos->count() === 1) {
