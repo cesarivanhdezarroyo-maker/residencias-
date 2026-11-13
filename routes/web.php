@@ -98,3 +98,8 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->group(
     Route::delete('/admin/mensajes-eliminados', [\App\Http\Controllers\AdminMensajeController::class, 'limpiarEliminados'])->name('admin.mensajes.limpiar');
     Route::delete('/admin/mensajes/{id}', [\App\Http\Controllers\AdminMensajeController::class, 'destroy'])->whereNumber('id')->name('admin.mensajes.destroy');
 });
+
+// ---- Bitacora de cambios (solo administrador, solo consulta) ----
+Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->group(function () {
+    Route::get('/admin/bitacora', [\App\Http\Controllers\AdminBitacoraController::class, 'index'])->name('admin.bitacora.index');
+});

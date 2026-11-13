@@ -38,6 +38,9 @@
                         <a href="{{ route('admin.reportes.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('admin.reportes.*') ? 'border-white text-white font-bold' : 'border-transparent text-yellow-400 hover:text-yellow-300 hover:border-yellow-300' }} text-sm leading-5 transition duration-150 ease-in-out">
                             {{ __('Reportes') }}
                         </a>
+                        <a href="{{ route('admin.bitacora.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('admin.bitacora.*') ? 'border-white text-white font-bold' : 'border-transparent text-yellow-400 hover:text-yellow-300 hover:border-yellow-300' }} text-sm leading-5 transition duration-150 ease-in-out">
+                            {{ __('Bitácora') }}
+                        </a>
                         <a href="{{ route('admin.limpieza.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('admin.limpieza.*') ? 'border-white text-white font-bold' : 'border-transparent text-yellow-400 hover:text-yellow-300 hover:border-yellow-300' }} text-sm leading-5 transition duration-150 ease-in-out">
                             {{ __('Limpieza') }}
                         </a>
