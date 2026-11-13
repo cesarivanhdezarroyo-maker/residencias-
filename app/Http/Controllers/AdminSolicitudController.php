@@ -53,18 +53,28 @@ class AdminSolicitudController extends Controller
 
         $validated = $request->validate([
             'estado_solicitud' => 'required|in:Pendiente,Aprobado,Rechazado',
-            'credencial_usuario' => ['nullable', 'string', 'max:255', function ($attribute, $value, $fail) use ($esCorreoInstitucional) {
+            'credencial_usuario' => ['nullable', 'string', 'max:255', 'prohibited_if:estado_solicitud,Pendiente', function ($attribute, $value, $fail) use ($esCorreoInstitucional) {
                 // El usuario se acepta con o sin @; si lleva @, debe ser un correo valido
                 if ($esCorreoInstitucional && $value && str_contains($value, '@') && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
                     $fail("Si el usuario lleva @, debe ser un correo v\u{00E1}lido (por ejemplo, nombre@issste.gob.mx).");
                 }
             }],
-            'credencial_password' => 'nullable|string|max:255',
-            'credencial_notas' => 'nullable|string|max:2000|required_if:estado_solicitud,Rechazado',
+            'credencial_password' => 'nullable|string|max:255|prohibited_if:estado_solicitud,Pendiente',
+            'credencial_notas' => 'nullable|string|max:2000|required_if:estado_solicitud,Rechazado|prohibited_if:estado_solicitud,Pendiente',
         ], [
             'credencial_usuario.email' => 'Para este servicio, el campo debe ser un correo institucional válido (ej. nombre@issste.gob.mx).',
             'credencial_notas.required_if' => 'Escribe el motivo del rechazo.',
+            'credencial_usuario.prohibited_if' => 'No se puede guardar usuario, contraseña ni notas mientras la solicitud esté Pendiente. Cámbiala primero a Aprobado (o a Rechazado para escribir el motivo).',
+            'credencial_password.prohibited_if' => 'No se puede guardar usuario, contraseña ni notas mientras la solicitud esté Pendiente. Cámbiala primero a Aprobado (o a Rechazado para escribir el motivo).',
+            'credencial_notas.prohibited_if' => 'No se puede guardar usuario, contraseña ni notas mientras la solicitud esté Pendiente. Cámbiala primero a Aprobado (o a Rechazado para escribir el motivo).',
         ]);
+
+        // Pendiente: no lleva usuario, contraseña ni notas (esos datos solo se guardan al aprobar o, el motivo, al rechazar).
+        if ($validated['estado_solicitud'] === 'Pendiente') {
+            $validated['credencial_usuario'] = null;
+            $validated['credencial_password'] = null;
+            $validated['credencial_notas'] = null;
+        }
 
         // Al rechazar solo se conserva el motivo: no se guardan credenciales.
         if ($validated['estado_solicitud'] === 'Rechazado') {

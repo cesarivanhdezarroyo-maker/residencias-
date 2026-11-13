@@ -329,15 +329,21 @@
             var placeholderOriginal = notas ? notas.getAttribute('placeholder') : '';
 
             function aplicar() {
-                var rechazado = sel.value === 'Rechazado';
+                var estado = sel.value;
+                var aprobado = estado === 'Aprobado';
+                var rechazado = estado === 'Rechazado';
 
+                // Usuario y contraseña: solo cuando se aprueba
                 [usuario, clave].forEach(function (campo) {
                     if (!campo) { return; }
-                    campo.style.display = rechazado ? 'none' : '';
-                    campo.disabled = rechazado; // un campo deshabilitado no se envia
+                    campo.style.display = aprobado ? '' : 'none';
+                    campo.disabled = !aprobado; // un campo deshabilitado no se envia
                 });
 
+                // Notas: opcionales al aprobar; son el motivo (obligatorio) al rechazar; en Pendiente no se usan
                 if (notas) {
+                    notas.style.display = (aprobado || rechazado) ? '' : 'none';
+                    notas.disabled = !(aprobado || rechazado);
                     notas.setAttribute('placeholder', rechazado ? 'Motivo del rechazo (obligatorio)' : placeholderOriginal);
                     notas.required = rechazado;
                 }
